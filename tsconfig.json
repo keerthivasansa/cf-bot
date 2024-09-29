@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "lib": [
+            "ES2022", 
+            "DOM"
+        ],
+        "esModuleInterop": true
+    }
+}
