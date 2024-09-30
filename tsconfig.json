@@ -5,6 +5,11 @@
             "ES2022", 
             "DOM"
         ],
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "baseUrl": ".",
+        "paths": {
+            "$src/*": ["src/*"],
+            "$db/*": ["db/*"]
+        }
     }
 }

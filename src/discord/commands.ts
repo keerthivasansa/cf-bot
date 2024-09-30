@@ -1,8 +1,7 @@
+import { infoCmd } from "./commands/info";
+import { verifyCmd } from "./commands/verify";
 
-export const commands = [
-    {
-        name: 'ping',
-        description: 'use ping'
-    }
+export const registeredCommands = [
+    verifyCmd,
+    infoCmd
 ]
-

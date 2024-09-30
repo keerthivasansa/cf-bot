@@ -1,14 +1,19 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ModalBuilder, SlashCommandBuilder } from "discord.js";
-import { Command } from "./type";
+import { Command } from "../type";
 import { randomInt } from "crypto";
-import { CodeforcesApi } from "../../codeforces/client";
-import { db } from "../../../db";
+import { CodeforcesApi } from "$src/codeforces/client";
+import { db } from "$db/index";
 
 export const verifyCmd: Command = {
     command: new SlashCommandBuilder()
         .setName('verify')
         .setDescription('Verify your codeforces handle')
-        .addStringOption((option) => option.setName('handle').setDescription('Your codeforces handle').setRequired(true))
+        .addStringOption(
+            (option) =>
+                option.setName('handle')
+                      .setDescription('Your codeforces handle')
+                      .setRequired(true)
+        )
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]),
 
     async execute(msg) {
