@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../type";
-import { db } from "../../../db";
+import { db } from "$db/index";
 
 export const infoCmd: Command = {
     command: new SlashCommandBuilder()

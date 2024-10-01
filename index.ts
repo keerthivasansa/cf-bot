@@ -8,4 +8,5 @@ const application = {
 async function main() {
     application.entry.forEach(cls => new cls());
 }
+
 main();
