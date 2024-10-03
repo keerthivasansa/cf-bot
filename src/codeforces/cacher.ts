@@ -4,15 +4,16 @@ import { CodeforcesApi } from "./client";
 
 
 export class CFCacher {
-    private readonly INTERVAL = 3600_000 // every hour;
+    private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
-        ["problems", this.cacheProblems],
-    ];
+        ["problems", () => this.cacheProblems()],
+    ] as const;
     private readonly cfApi: CodeforcesApi;
     private readonly lastExecuted: Record<string, number | null>;
 
     constructor() {
         this.cfApi = new CodeforcesApi();
+        this.lastExecuted = {};
         this.init();
     }
 
@@ -21,23 +22,25 @@ export class CFCacher {
         for (let row of cacheStatus) {
             this.lastExecuted[row.cache_key] = row.last_executed.getTime();
         }
+        for (let tsk of this.TASKS)
+            this.cacheCore(tsk[0], tsk[1]);
     }
 
     async cacheCore(taskName: string, taskFn: Function) {
         const prevRun = this.lastExecuted[taskName] || 0;
-        if (!prevRun) {
+        const now = Date.now();
+        if (prevRun + this.INTERVAL < now) {
+            console.log('Running cache job:', taskName);
             taskFn();
             await db.updateTable("cache_status").set({
                 last_executed: new Date()
             }).where("cache_key", "=", taskName).execute();
-        }
-        const now = Date.now();
-        setTimeout(() => taskFn(), this.INTERVAL + prevRun - now);
+            setInterval(taskFn, this.INTERVAL);
+        } else
+            setTimeout(() => taskFn(), this.INTERVAL + prevRun - now);
     }
 
     async cacheProblems() {
-        const name = "problems";
-
         let { cached_contest } = await db.selectFrom("problems").select(({ fn, val, ref }) => [
             fn.max('contestId').as('cached_contest')
         ]).executeTakeFirst();
@@ -68,8 +71,6 @@ export class CFCacher {
 
             for (let i = 0; i < problems.length; i++) {
                 const prob = problems[i];
-                if (i % 500 == 0)
-                    console.log("Finished", i);
 
                 // if it's greater than cached contest -> insert new problems.
                 if (prob.contestId > cached_contest && prob.contestId) {
