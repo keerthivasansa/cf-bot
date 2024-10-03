@@ -34,7 +34,7 @@ async function migrate(command: string) {
             result = await migrator.migrateTo(command);
     }
 
-    console.log(result.results)
+    console.log(result)
 
     console.log('Database migrated as specified.');
 }

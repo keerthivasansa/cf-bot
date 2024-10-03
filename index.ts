@@ -1,8 +1,9 @@
 import 'reflect-metadata';
-import { Bot } from "./src/discord/bot";
+import { Bot } from "$src/discord/bot";
+import { CFCacher } from '$src/codeforces/cacher';
 
 const application = {
-    entry: [Bot],
+    entry: [Bot, CFCacher],
 }
 
 async function main() {
