@@ -13,14 +13,22 @@ export class CodeforcesApi {
     async getUserSubmissions(handle: string, count: number = 5) {
         const resp = await this.client.get('user.status', {
             params: {
-                handle, 
-                from: 1, 
+                handle,
+                from: 1,
                 count
             }
         });
         const data = resp.data as CfResult<Submission[]>;
         if (data.status != 'OK')
-            return [];    
+            return [];
         return data.result;
+    }
+
+    async getAllProblems() {
+        const resp = await this.client.get('problemset.problems');
+        const data = resp.data as CfResult<{ problems: Problem[]}>;
+        if (data.status != 'OK')
+            return [];
+        return data.result.problems;
     }
 }

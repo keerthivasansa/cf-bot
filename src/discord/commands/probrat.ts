@@ -27,7 +27,7 @@ export const probRatCmd: Command = {
             else
                 return 1;
         });
-    
+
         const fields = sorted.map(prob => {
             const rating = Math.round(prob.rating / 100) * 100;
             const probRating = Math.max(800, rating);
