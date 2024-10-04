@@ -51,13 +51,13 @@ export const probRatCmd: Command = {
         }
 
         let table = new CliTable3({
-            head: ['Problem', 'Actual', 'Predicted'],
+            head: ['#', 'Actual', 'Predicted'],
             style: {
                 head: [], //disable colors in header cells
                 border: [], //disable colors for the border
             },
             colAligns: ['center', 'center', 'center'],
-            colWidths: [10, 12, 12], //set the widths of each column (optional)
+            colWidths: [3, 8, 8], //set the widths of each column (optional)
         });
 
         for (const prob of cachedProb)
