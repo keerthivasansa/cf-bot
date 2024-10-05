@@ -3,7 +3,7 @@ import { Command } from "../type";
 import { db } from "$db/index";
 
 export const infoCmd: Command = {
-    command: new SlashCommandBuilder()
+    info: new SlashCommandBuilder()
         .setName("info")
         .setDescription("Get your current registered handle"),
 
@@ -13,6 +13,6 @@ export const infoCmd: Command = {
             msg.reply('You have not registered your handle yet!');
             return;
         }
-        msg.reply(`Your codeforces handle: \`${user.handle}\``);
+        msg.reply(`Your codeforces handle: \`${user.handle} (${user.rating}) \``);
     },
 };

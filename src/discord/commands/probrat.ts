@@ -5,7 +5,7 @@ import { db } from "$db/index";
 import CliTable3 from "cli-table3";
 
 export const probRatCmd: Command = {
-    command: new SlashCommandBuilder()
+    info: new SlashCommandBuilder()
         .setName("probrat")
         .setDescription("Get the official / predicted rating of problems for a given contest")
         .addNumberOption((option) =>

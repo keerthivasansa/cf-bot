@@ -56,20 +56,20 @@ export class Bot {
         try {
             await this.client.rest.put(
                 Routes.applicationCommands(this.CLIENT_ID),
-                { body: registeredCommands.map(cmd => cmd.command.toJSON()) }
+                { body: registeredCommands.map(cmd => cmd.info.toJSON()) }
             );
 
             this.client.commands = new Collection();
 
             registeredCommands.forEach(cmd => {
-                this.client.commands.set(cmd.command.name, cmd.execute);
+                this.client.commands.set(cmd.info.name, cmd.execute);
             });
         } catch (error) {
             console.error('Error registering commands:', error);
         }
     }
 
-    private handleInteraction(interaction: Interaction) {
+    private async handleInteraction(interaction: Interaction) {
         if (!interaction.isChatInputCommand()) return;
 
         const command = this.client.commands.get(interaction.commandName);

@@ -33,7 +33,7 @@ export class QueuedTasker {
 
         this.__lastExecTime = date;
         this.currTimer = null;
-        
+
         if (this.tasks.length)
             this.__tick();
     }
@@ -41,5 +41,9 @@ export class QueuedTasker {
     __destroy() {
         if (this.currTimer)
             clearTimeout(this.currTimer);
+    }
+
+    waitForRelease() {
+        return new Promise((res, rej) => this.add(() => res(0)));
     }
 }

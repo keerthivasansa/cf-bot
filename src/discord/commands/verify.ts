@@ -1,11 +1,11 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ModalBuilder, SlashCommandBuilder } from "discord.js";
 import { Command } from "../type";
 import { randomInt } from "crypto";
-import { CodeforcesApi } from "$src/codeforces/client";
 import { db } from "$db/index";
+import { CFApiFactory } from "$src/codeforces/client";
 
 export const verifyCmd: Command = {
-    command: new SlashCommandBuilder()
+    info: new SlashCommandBuilder()
         .setName('verify')
         .setDescription('Verify your codeforces handle')
         .addStringOption(
@@ -48,7 +48,7 @@ export const verifyCmd: Command = {
         });
 
         if (confirmation.customId === 'DONE') {
-            const cfApi = new CodeforcesApi();
+            const cfApi = CFApiFactory.get();
             await response.edit({ components: [] });
             const submissions = await cfApi.getUserSubmissions(handle, 1);
             if (submissions.length < 1) {

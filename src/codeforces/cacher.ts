@@ -1,18 +1,18 @@
 import { db } from "$db/index";
 import { InsertResult, UpdateResult } from "kysely";
-import { CodeforcesApi } from "./client";
-
+import { CFApi, CFApiFactory } from "./client";
 
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
         ["problems", () => this.cacheProblems()],
+        ["users", () => this.cacheUsers()],
     ] as const;
-    private readonly cfApi: CodeforcesApi;
+    private readonly cfApi: CFApi;
     private readonly lastExecuted: Record<string, number | null>;
 
     constructor() {
-        this.cfApi = new CodeforcesApi();
+        this.cfApi = CFApiFactory.get();
         this.lastExecuted = {};
         this.init();
     }
@@ -99,5 +99,30 @@ export class CFCacher {
             await Promise.all(promises);
         });
         console.timeEnd("caching");
+    }
+
+    async cacheUsers() {
+        const users = await db.selectFrom('users').selectAll().where('handle', 'is not', null).execute();
+        const handles = users.map(usr => usr.handle);
+        console.log("Caching user info");
+        console.log(handles);
+        const info = await this.cfApi.getUsersInfo(handles);
+        console.time("caching users");
+        await db.transaction().execute(tdb => {
+            let promises: Promise<any>[] = [];
+            info.forEach(usr => {
+                promises.push(
+                    tdb.updateTable('users')
+                        .set({
+                            rating: usr.rating
+                        })
+                        .where('handle', '=', usr.handle)
+                        .execute()
+                )
+            });
+            return Promise.all(promises);
+        });
+        console.timeEnd("caching users");
+        console.log("Cached!");
     }
 }
