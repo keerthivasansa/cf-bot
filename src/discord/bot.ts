@@ -64,6 +64,7 @@ export class Bot {
             registeredCommands.forEach(cmd => {
                 this.client.commands.set(cmd.info.name, cmd.execute);
             });
+            console.log("Bot initialized!")
         } catch (error) {
             console.error('Error registering commands:', error);
         }
