@@ -4,6 +4,7 @@ import { db } from "$db/index";
 import { CFApiFactory } from "$src/codeforces/client";
 import { CFLineChart } from "$src/graphs/line";
 import { EmbedBuilder } from "@discordjs/builders";
+import { getRatingColor } from "$src/codeforces/range";
 
 export const ratingCmd: Command = {
     info: new SlashCommandBuilder()
@@ -31,9 +32,11 @@ export const ratingCmd: Command = {
         const selected = showEntire ? allRatings : last10;
         const selectedData = new Map<Date, number>();
 
+        let currRating = 0;
         for (let i = 0; i < selected.length; i++) {
             const s = selected[i];
             const d = new Date(s.ratingUpdateTimeSeconds * 1000);
+            currRating = s.newRating;
             selectedData.set(d, s.newRating);
         }
 
@@ -48,7 +51,7 @@ export const ratingCmd: Command = {
 
         const embed = new EmbedBuilder()
             .setTitle(`${user.handle} - Rating`)
-            .setColor([255, 0, 0])
+            .setColor(getRatingColor(currRating))
             .setImage('attachment://canvas.png');
 
         return msg.reply({

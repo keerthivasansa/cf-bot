@@ -2,8 +2,9 @@ import { AttachmentBuilder, SlashCommandBuilder } from "discord.js";
 import type { Command } from "../type";
 import { db } from "$db/index";
 import { CFApiFactory } from "$src/codeforces/client";
-import { CFLineChart, formatDateToDDMMYYYY } from "$src/graphs/line";
+import { CFLineChart } from "$src/graphs/line";
 import { EmbedBuilder } from "@discordjs/builders";
+import { getRatingColor } from "$src/codeforces/range";
 
 const MULTIPLY_FACTOR = 4;
 
@@ -34,11 +35,13 @@ export const perfCmd: Command = {
         const selected = showEntire ? allRatings : last10;
         const selectedData = new Map<Date, number>();
 
+        let currRating = 0;
         for (let i = 0; i < selected.length; i++) {
             const s = selected[i];
             const d = new Date(s.ratingUpdateTimeSeconds * 1000);
             const perfRating = s.oldRating + (s.newRating - s.oldRating) * MULTIPLY_FACTOR;
-            selectedData.set(d, Math.max(perfRating, 0));
+            currRating = Math.max(perfRating, 0)
+            selectedData.set(d, currRating);
         }
 
         const chartUrl = new CFLineChart(selectedData)
@@ -47,12 +50,13 @@ export const perfCmd: Command = {
             .build()
             .toPNG();
 
+
         const attachment = new AttachmentBuilder(chartUrl)
             .setName('canvas.png');
 
         const embed = new EmbedBuilder()
             .setTitle(`${user.handle} - Performance`)
-            .setColor([255, 0, 0])
+            .setColor(getRatingColor(currRating))
             .setImage('attachment://canvas.png');
 
         return msg.reply({

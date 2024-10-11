@@ -1,6 +1,7 @@
 import { Chart } from "chart.js/auto";
 import Annotation from "chartjs-plugin-annotation";
 import 'chartjs-adapter-date-fns';
+import { CF_RATING_RANGE } from "$src/codeforces/range";
 
 interface RangeTypeI {
     type: 'horizontal' | 'vertical',
@@ -10,18 +11,7 @@ interface RangeTypeI {
 const rangeTypes: Record<any, RangeTypeI> = {
     RATING: {
         type: 'vertical',
-        ranges: [
-            { color: '#cccccc', start: 0 },
-            { color: '#77ff77', start: 1200 },
-            { color: '#77ddbb', start: 1400 },
-            { color: '#aaaaff', start: 1600 },
-            { color: '#ff88ff', start: 1900 },
-            { color: '#ffcc88', start: 2100 },
-            { color: '#ffbb55', start: 2300 },
-            { color: '#ff7777', start: 2400 },
-            { color: '#ff7777', start: 2600 },
-            { color: '#aa0000', start: 3000 },
-        ]
+        ranges: CF_RATING_RANGE
     }
 };
 

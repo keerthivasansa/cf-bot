@@ -4,14 +4,6 @@ import type { AnnotationOptions } from 'chartjs-plugin-annotation';
 import type { RangeType } from './plugins';
 import { Chart } from './plugins';
 
-export function formatDateToDDMMYYYY(date: Date) {
-    return new Intl.DateTimeFormat('en-CA', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    }).format(date);
-}
-
 export class CFLineChart<KeyType> {
     private SCALE_FACTOR = 3;
     private LABEL_OFFSET = this._scale(20);
