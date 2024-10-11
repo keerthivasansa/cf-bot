@@ -21,17 +21,23 @@ export const ratingCmd: Command = {
             return msg.reply("User has not registered their codeforces handle!")
 
         const cfApi = CFApiFactory.get();
+        const allRatings = await cfApi.getUserRatings(user.handle);
 
-        const ratingChanges = await cfApi.getUserRatings(user.handle);
-
-        if (ratingChanges.length === 0)
+        if (allRatings.length === 0)
             return msg.reply("You have not participated in any contests yet!");
 
-        const ratings = ratingChanges.map((rating) => rating.newRating);
+        const last10 = allRatings.slice(Math.max(0, allRatings.length - 10));
 
-        const showRatings = ratings.slice(Math.max(0, ratings.length - 10));
+        const selected = showEntire ? allRatings : last10;
+        const selectedData = new Map<Date, number>();
 
-        const chartUrl = new CFLineChart(showEntire ? ratings : showRatings)
+        for (let i = 0; i < selected.length; i++) {
+            const s = selected[i];
+            const d = new Date(s.ratingUpdateTimeSeconds * 1000);
+            selectedData.set(d, s.newRating);
+        }
+
+        const chartUrl = new CFLineChart(selectedData)
             .labelMaxPoint()
             .setRangeBackground('RATING')
             .build()

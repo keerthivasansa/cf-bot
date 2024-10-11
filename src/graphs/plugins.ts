@@ -1,5 +1,6 @@
 import { Chart } from "chart.js/auto";
 import Annotation from "chartjs-plugin-annotation";
+import 'chartjs-adapter-date-fns';
 
 interface RangeTypeI {
     type: 'horizontal' | 'vertical',

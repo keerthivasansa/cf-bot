@@ -1,8 +1,8 @@
-import { AttachmentBuilder, Embed, SlashCommandBuilder } from "discord.js";
-import { Command } from "../type";
+import { AttachmentBuilder, SlashCommandBuilder } from "discord.js";
+import type { Command } from "../type";
 import { db } from "$db/index";
 import { CFApiFactory } from "$src/codeforces/client";
-import { CFLineChart } from "$src/graphs/line";
+import { CFLineChart, formatDateToDDMMYYYY } from "$src/graphs/line";
 import { EmbedBuilder } from "@discordjs/builders";
 
 const MULTIPLY_FACTOR = 4;
@@ -24,16 +24,24 @@ export const perfCmd: Command = {
 
         const cfApi = CFApiFactory.get();
 
-        const ratingChanges = await cfApi.getUserRatings(user.handle);
+        const allRatings = await cfApi.getUserRatings(user.handle);
 
-        if (ratingChanges.length === 0)
+        if (allRatings.length === 0)
             return msg.reply("You have not participated in any contests yet!");
-
-        const allRatings = ratingChanges.map((rating) => rating.oldRating + (rating.newRating - rating.oldRating) * MULTIPLY_FACTOR);
 
         const last10 = allRatings.slice(Math.max(0, allRatings.length - 10));
 
-        const chartUrl = new CFLineChart(showEntire ? allRatings : last10)
+        const selected = showEntire ? allRatings : last10;
+        const selectedData = new Map<Date, number>();
+
+        for (let i = 0; i < selected.length; i++) {
+            const s = selected[i];
+            const d = new Date(s.ratingUpdateTimeSeconds * 1000);
+            const perfRating = s.oldRating + (s.newRating - s.oldRating) * MULTIPLY_FACTOR;
+            selectedData.set(d, Math.max(perfRating, 0));
+        }
+
+        const chartUrl = new CFLineChart(selectedData)
             .labelMaxPoint()
             .setRangeBackground('RATING')
             .build()

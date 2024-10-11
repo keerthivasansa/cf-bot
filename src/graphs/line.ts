@@ -4,7 +4,15 @@ import type { AnnotationOptions } from 'chartjs-plugin-annotation';
 import type { RangeType } from './plugins';
 import { Chart } from './plugins';
 
-export class CFLineChart {
+export function formatDateToDDMMYYYY(date: Date) {
+    return new Intl.DateTimeFormat('en-CA', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).format(date);
+}
+
+export class CFLineChart<KeyType> {
     private SCALE_FACTOR = 3;
     private LABEL_OFFSET = this._scale(20);
     private FONT_SIZE = this._scale(14);
@@ -13,24 +21,25 @@ export class CFLineChart {
     private plugins: Record<string, Record<string, any>>;
     private config: ChartConfiguration;
     private canvas: Canvas;
-    private data: number[];
+    private data: Map<KeyType, number>;
     private DATA_OFFSET: number;
 
-    constructor(data: number[]) {
+    constructor(data: Map<KeyType, number>) {
         this.annotations = {};
         this.plugins = {};
         this.data = data;
-        this.DATA_OFFSET = (Math.max(...this.data) - Math.min(...this.data)) / 1000;
 
+        const values = Array.from(this.data.values());
+        const labels = Array.from(this.data.keys());
 
-        const xLabels = Array.from({ length: this.data.length }).map((_, i) => (i + 1).toString());
+        this.DATA_OFFSET = (Math.max(...values) - Math.min(...values)) / 1000;
 
         this.config = {
             type: "line",
             data: {
-                xLabels,
+                xLabels: labels,
                 datasets: [{
-                    data: this.data,
+                    data: values,
                     borderWidth: this._scale(2),
                     borderColor: "black",
                     pointBorderColor: 'black',
@@ -57,12 +66,21 @@ export class CFLineChart {
                 },
                 scales: {
                     x: {
+                        type: 'time',
+                        time: {
+                            unit: 'month',
+                            displayFormats: {
+                                'month': 'MMM'
+                            }
+                        },
                         offset: true,
                         ticks: {
                             font: {
                                 size: this.FONT_SIZE
                             },
+                            autoSkip: true,
                         }
+
                     },
                     y: {
                         offset: true,
@@ -99,11 +117,12 @@ export class CFLineChart {
         return this;
     }
 
-    addLabel(text: string, x: number, y: number) {
+    addLabel(text: string, x: KeyType, y: number) {
         const index = Object.keys(this.annotations).length;
         this.annotations[`point${index}`] = {
             type: "label",
             content: [text],
+            // @ts-ignore
             xValue: x,
             yValue: y + this.DATA_OFFSET * this.LABEL_OFFSET,
             font: {
@@ -115,23 +134,22 @@ export class CFLineChart {
         return this;
     }
 
-    labelPoint(index: number) {
-        if (index >= this.data.length || index < 0)
-            throw new Error(`Invalid index, expected value from 0 to ${this.data.length - 1}`);
-
-        const val = this.data[index];
-
+    labelPoint(index: KeyType) {
+        const val = this.data.get(index);
         this.addLabel(val.toString(), index, val);
         return this;
     }
 
     labelMaxPoint() {
-        let mx = 0, mxVal = 0;
-        for (let i = 0; i < this.data.length; i++)
-            if (this.data[i] > mxVal) {
-                mxVal = this.data[i];
-                mx = i;
+        let mx: KeyType;
+        let mxVal = 0;
+
+        for (const [key, value] of this.data.entries()) {
+            if (value > mxVal) {
+                mxVal = mxVal;
+                mx = key;
             }
+        }
 
         this.labelPoint(mx);
         return this;

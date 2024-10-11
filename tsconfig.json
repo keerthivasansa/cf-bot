@@ -5,6 +5,8 @@
             "ES2022", 
             "DOM"
         ],
+        "target": "ES2023",
+        "moduleResolution": "node",
         "esModuleInterop": true,
         "baseUrl": ".",
         "paths": {
