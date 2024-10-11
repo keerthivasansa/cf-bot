@@ -61,6 +61,8 @@ export const PLUGIN_RANGED_FILL = {
     }
 };
 
+Chart.defaults.font.family = Bun.env.CHART_FONT_FAMILY;
+
 // Register plugins
 Chart.register(PLUGIN_RANGED_FILL, Annotation);
 
