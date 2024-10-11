@@ -54,7 +54,7 @@ class CodeforcesApi {
 
     async getUserSolvedProblems(handle: string, contestId: number) {
         await this.tasker.waitForRelease();
-        // https://codeforces.com/api/contest.status?contestId=2008&handle=sakeerthi23&count=100
+
         const resp = await this.client.get('contest.status', {
             params: {
                 contestId,
@@ -88,6 +88,21 @@ class CodeforcesApi {
         if (data.status != 'OK')
             return [];
 
+        return data.result;
+    }
+
+    async getRatedUsers() {
+        await this.tasker.waitForRelease();
+
+        const resp = await this.client.get('user.ratedList', {
+            params: {
+                includeRetired: false,
+                activeOnly: false,
+            }
+        });
+        const data = resp.data as CfResult<User[]>;
+        if (data.status != 'OK')
+            return [];
         return data.result;
     }
 }
