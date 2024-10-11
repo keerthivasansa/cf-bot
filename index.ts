@@ -8,7 +8,7 @@ const application = {
 }
 
 async function main() {
-    console.log(img);
+    application.entry.forEach(cls => new cls());
 }
 
 main();

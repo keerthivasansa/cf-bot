@@ -5,7 +5,7 @@ import type { RangeType } from './plugins';
 import { Chart } from './plugins';
 
 export class CFLineChart {
-    private SCALE_FACTOR = 2.15;
+    private SCALE_FACTOR = 3;
     private LABEL_OFFSET = this._scale(20);
     private FONT_SIZE = this._scale(14);
 
@@ -109,7 +109,8 @@ export class CFLineChart {
             font: {
                 weight: "bold",
                 style: "italic"
-            }
+            },
+            adjustScaleRange: true,
         }
         return this;
     }
@@ -156,6 +157,13 @@ export class CFLineChart {
         if (!this.canvas)
             throw new Error("Chart not built yet");
         const png = this.canvas.toBuffer("image/png");
+        return png;
+    }
+
+    toDataURL() {
+        if (!this.canvas)
+            throw new Error("Chart not built yet");
+        const png = this.canvas.toDataURL();
         return png;
     }
 }

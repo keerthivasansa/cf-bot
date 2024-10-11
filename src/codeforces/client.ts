@@ -73,6 +73,23 @@ class CodeforcesApi {
         }
         return solvedProbs;
     }
+
+    async getUserRatings(handle: string) {
+        await this.tasker.waitForRelease();
+
+        const resp = await this.client.get('user.rating', {
+            params: {
+                handle,
+            }
+        });
+
+        const data = resp.data as CfResult<RatingChange[]>;
+
+        if (data.status != 'OK')
+            return [];
+
+        return data.result;
+    }
 }
 
 export type CFApi = CodeforcesApi;
