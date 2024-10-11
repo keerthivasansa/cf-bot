@@ -5,13 +5,15 @@ import { CFApiFactory } from "$src/codeforces/client";
 import { CFLineChart } from "$src/graphs/line";
 import { EmbedBuilder } from "@discordjs/builders";
 
-export const ratingCmd: Command = {
+const MULTIPLY_FACTOR = 4;
+
+export const perfCmd: Command = {
     info: new SlashCommandBuilder()
-        .setName("rating")
-        .setDescription("Fetch a user's rating graph")
+        .setName("perf")
+        .setDescription("Fetch a user's performance graph")
         .addBooleanOption(option => option
             .setName("full")
-            .setDescription("Show entire history")),
+            .setDescription("Show entire performance history")),
 
     async execute(msg) {
         const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
@@ -27,11 +29,11 @@ export const ratingCmd: Command = {
         if (ratingChanges.length === 0)
             return msg.reply("You have not participated in any contests yet!");
 
-        const ratings = ratingChanges.map((rating) => rating.newRating);
+        const allRatings = ratingChanges.map((rating) => rating.oldRating + (rating.newRating - rating.oldRating) * MULTIPLY_FACTOR);
 
-        const showRatings = ratings.slice(Math.max(0, ratings.length - 10));
+        const last10 = allRatings.slice(Math.max(0, allRatings.length - 10));
 
-        const chartUrl = new CFLineChart(showEntire ? ratings : showRatings)
+        const chartUrl = new CFLineChart(showEntire ? allRatings : last10)
             .labelMaxPoint()
             .setRangeBackground('RATING')
             .build()
@@ -41,7 +43,7 @@ export const ratingCmd: Command = {
             .setName('canvas.png');
 
         const embed = new EmbedBuilder()
-            .setTitle(`${user.handle} - Rating`)
+            .setTitle(`${user.handle} - Performance`)
             .setColor([255, 0, 0])
             .setImage('attachment://canvas.png');
 
@@ -50,5 +52,4 @@ export const ratingCmd: Command = {
             files: [attachment]
         });
     },
-
 };
