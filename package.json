@@ -13,7 +13,11 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.56",
     "axios": "^1.7.7",
+    "chart.js": "^4.4.4",
+    "chartjs-node-canvas": "^4.1.6",
+    "chartjs-plugin-annotation": "^3.0.1",
     "cli-table3": "^0.6.5",
     "columnify": "^1.6.0",
     "discord.js": "^14.16.2",
