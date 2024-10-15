@@ -1,8 +1,9 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { AttachmentBuilder, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { Command } from "../type";
-import { CFPercentileFactory } from "$src/codeforces/perc_store";
+import { CFPercentileFactory, PercentileType } from "$src/codeforces/perc_store";
 import { db } from "$db/index";
 import { getRatingColor } from "$src/codeforces/range";
+import { CFLineChart } from "$src/graphs/line";
 
 export const percentileCmd: Command = {
     info: new SlashCommandBuilder()
@@ -19,28 +20,33 @@ export const percentileCmd: Command = {
 
     async execute(msg) {
         const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
-        const type = (msg.options.getString('type') as 'max' | 'current') || 'max';
+        const type = (msg.options.getString('type') as PercentileType) || 'max';
 
         if (!user)
             return msg.reply("User has not registered their codeforces handle!");
 
         const percApi = CFPercentileFactory.get();
 
-        const perc = await percApi.get(user.rating, type)
-        console.log({ perc });
+        // TODO max rating
+        const ratingPercMap = percApi.getMap(type);
+        const userPercentile = ratingPercMap.get(user.rating);
+
+        const chart = new CFLineChart(ratingPercMap)
+            .addLabel(userPercentile.toString(), user.rating,  userPercentile)
+            .build()
+            .toPNG();
+
+        const attachment = new AttachmentBuilder(chart)
+            .setName("canvas.png");
 
         const embed = new EmbedBuilder()
             .setTitle(`${user.handle} - Percentile - ${type}`)
             .setColor(getRatingColor(user.rating))
-            .addFields([
-                {
-                    name: `${perc}%`,
-                    value: " "
-                }
-            ])
+            .setImage("attachment://canvas.png");
 
         return msg.reply({
-            embeds: [embed]
+            embeds: [embed],
+            files: [attachment]
         })
     },
 };
