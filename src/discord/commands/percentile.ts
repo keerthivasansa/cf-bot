@@ -29,10 +29,10 @@ export const percentileCmd: Command = {
 
         // TODO max rating
         const ratingPercMap = percApi.getMap(type);
-        const userPercentile = ratingPercMap.get(user.rating);
 
         const chart = new CFLineChart(ratingPercMap)
-            .addLabel(userPercentile.toString(), user.rating,  userPercentile)
+            .addLabel(user.rating)
+            .setRangeBackground('RATING_HORIZONTAL')
             .build()
             .toPNG();
 

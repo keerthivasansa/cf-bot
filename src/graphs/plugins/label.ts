@@ -2,9 +2,9 @@ import { Plugin } from "chart.js";
 import { CHARTJS_FONT } from ".";
 
 export interface LabelPoint {
-    x: number,
-    y: number
-    text: string
+    x: number | Date;
+    y: number;
+    text?: string
 }
 
 // TODO Needs a lot of tweaking.
@@ -20,6 +20,7 @@ export const LABEL_PLUGIN: Plugin = {
         for (let pt of points) {
             const radius = 10;
 
+            // @ts-ignore
             const px = x.getPixelForValue(pt.x);
             const py = y.getPixelForValue(pt.y);
 
@@ -31,6 +32,9 @@ export const LABEL_PLUGIN: Plugin = {
             ctx.lineWidth = 6;
             ctx.strokeStyle = 'black';
             ctx.stroke();
+
+            if (!pt.text)
+                continue;
 
             ctx.font = `italic bold 30pt ${CHARTJS_FONT}`;
             ctx.fillStyle = 'black'
@@ -54,6 +58,8 @@ export const LABEL_PLUGIN: Plugin = {
                 if (pos[0] < left || pos[0] + textMeasure.width > right || pos[1] - height < top || pos[1] + height > bottom)
                     continue;
 
+                console.log(pos, textMeasure.width, height);
+
                 const region = ctx.getImageData(pos[0], pos[1], textMeasure.width, height);
                 const clash = region.data.filter((val, index) => index % 4 > 0).reduce((p, c) => p + c);
 
@@ -64,7 +70,12 @@ export const LABEL_PLUGIN: Plugin = {
             }
 
             console.log(bestMatch);
+            if (bestMatch == '') {
+                console.log("Found no best match, defaulting to left position")
+                bestMatch = 'left';
+            }
             const bestPos = positions[bestMatch];
+
             ctx.fillText(pt.text, bestPos[0], bestPos[1]);
         }
 

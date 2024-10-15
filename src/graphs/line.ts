@@ -6,7 +6,6 @@ import type { RangeType } from './plugins/rangedBg';
 
 export class CFLineChart<KeyType> {
     private SCALE_FACTOR = 3;
-    private LABEL_OFFSET = this._scale(20);
     private FONT_SIZE = this._scale(14);
 
     private annotations: Record<string, AnnotationOptions>;
@@ -14,7 +13,6 @@ export class CFLineChart<KeyType> {
     private config: ChartConfiguration;
     private canvas: Canvas;
     private data: Map<KeyType, number>;
-    private DATA_OFFSET: number;
 
     constructor(data: Map<KeyType, number>) {
         this.annotations = {};
@@ -27,8 +25,6 @@ export class CFLineChart<KeyType> {
         let lbl: string[];
         if (!(labels[0] instanceof Date))
             lbl = labels.map(l => l.toString());
-
-        this.DATA_OFFSET = (Math.max(...values) - Math.min(...values)) / 1000;
 
         this.config = {
             type: "line",
@@ -108,7 +104,16 @@ export class CFLineChart<KeyType> {
     }
 
     setXTicksStepSize(step: number) {
-        this.config['options']['scales']['x']['ticks']['stepSize'] = 500;
+        this.config['options']['scales']['x']['ticks']['stepSize'] = step;
+        return this;
+    }
+
+    markPoints() {
+        for (const [key, val] of this.data)
+            this.plugins['labelPoint']['optPoints'].push({
+                x: key,
+                y: val
+            })
         return this;
     }
 
@@ -131,24 +136,20 @@ export class CFLineChart<KeyType> {
     setRangeBackground(rangeType: RangeType) {
         this.plugins['rangedBackground'] = {
             rangeType,
-            offset: this._scale(20),
+            offset: this._scale(8),
         }
         return this;
     }
 
     addLabel(x: KeyType) {
-        const f = this.data.get(x);
+        const val = this.data.get(x);
+        console.log("adding label for index", x, val);
         const point = {
-            y: f,
             x,
-            text: f.toString(),
+            y: val,
+            text: val.toString(),
         }
         this.plugins['labelPoint']['optPoints'].push(point);
-        return this;
-    }
-
-    labelPoint(index: KeyType) {
-        this.addLabel(index);
         return this;
     }
 
@@ -163,7 +164,7 @@ export class CFLineChart<KeyType> {
             }
         }
 
-        this.labelPoint(mx);
+        this.addLabel(mx);
         return this;
     }
 
@@ -194,7 +195,7 @@ export class CFLineChart<KeyType> {
     toDataURL() {
         if (!this.canvas)
             throw new Error("Chart not built yet");
-        const png = this.canvas.toDataURL();
-        return png;
+        const url = this.canvas.toDataURL();
+        return url;
     }
 }

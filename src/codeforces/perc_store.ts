@@ -58,8 +58,6 @@ class CFPercentileStore {
             this.currRatingMap.set(i, perc);
         }
 
-        Bun.write("rating_map.json", JSON.stringify(Array.from(this.maxRatingMap.entries())));
-
         await Promise.all(promises);
         console.timeEnd("store percentile");
     }

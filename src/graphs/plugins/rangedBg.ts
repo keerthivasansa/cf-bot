@@ -1,8 +1,4 @@
-import { Chart } from "chart.js/auto";
-import Annotation from "chartjs-plugin-annotation";
-import 'chartjs-adapter-date-fns';
 import { CF_RATING_RANGE } from "$src/codeforces/range";
-import { LABEL_PLUGIN } from "./label";
 
 interface RangeTypeI {
     type: 'horizontal' | 'vertical',
@@ -12,11 +8,11 @@ interface RangeTypeI {
 const rangeTypes: Record<any, RangeTypeI> = {
     RATING: {
         type: 'vertical',
-        ranges: CF_RATING_RANGE
+        ranges: CF_RATING_RANGE.toReversed()
     },
     RATING_HORIZONTAL: {
         type: 'horizontal',
-        ranges: [...CF_RATING_RANGE]
+        ranges: CF_RATING_RANGE
     }
 };
 
@@ -42,7 +38,7 @@ export const PLUGIN_RANGED_FILL = {
         const scale = bgRange.type == 'horizontal' ? chart.scales.x : chart.scales.y;
 
         if (scale) {
-            min = Math.max(0, scale.min - offset);
+            min = Math.max(0, scale.min) - offset;
             max = scale.max + offset;
         } else
             throw new Error("Y Scale doesn't exist");
@@ -53,17 +49,22 @@ export const PLUGIN_RANGED_FILL = {
         ctx.save();
         const fullArea = bgRange.type === 'horizontal' ? innerWidth : innerHeight;
         const conv = fullArea / (max - min);
-        let curr = 0, prevEnd = bgRange.type === 'horizontal' ? min : max;
+        let curr = 0, prevEnd = max;
+
+        console.log({ min, max })
 
         for (let i = 0; i < bgRange.ranges.length; i++) {
             const range = bgRange.ranges[i];
-            if (range.start > max || range.start < min)
+            if (range.start > max)
                 continue;
             ctx.fillStyle = range.color;
 
             let blockSize = 0;
             if (bgRange.type === 'vertical') {
+                let st = Math.max(range.start, min);
                 blockSize = (prevEnd - Math.max(range.start, min)) * conv;
+                prevEnd = range.start;
+                console.log({ st, blockSize });
                 ctx.fillRect(left, curr + top, innerWidth, blockSize);
             }
             else {
@@ -75,7 +76,6 @@ export const PLUGIN_RANGED_FILL = {
                 ctx.fillRect(curr + left, top, blockSize, innerHeight);
             }
             curr += blockSize;
-            prevEnd = range.start;
         }
 
         ctx.restore();
