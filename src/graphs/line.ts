@@ -1,12 +1,11 @@
 import { Canvas, createCanvas } from '@napi-rs/canvas';
+import { Chart } from './plugins'
 import type { ChartConfiguration } from 'chart.js/auto';
 import type { AnnotationOptions } from 'chartjs-plugin-annotation';
-import type { RangeType } from './plugins';
-import { Chart } from './plugins';
+import type { RangeType } from './plugins/rangedBg';
 
 export class CFLineChart<KeyType> {
     private SCALE_FACTOR = 3;
-    private LABEL_OFFSET = this._scale(20);
     private FONT_SIZE = this._scale(14);
 
     private annotations: Record<string, AnnotationOptions>;
@@ -14,7 +13,6 @@ export class CFLineChart<KeyType> {
     private config: ChartConfiguration;
     private canvas: Canvas;
     private data: Map<KeyType, number>;
-    private DATA_OFFSET: number;
 
     constructor(data: Map<KeyType, number>) {
         this.annotations = {};
@@ -24,20 +22,20 @@ export class CFLineChart<KeyType> {
         const values = Array.from(this.data.values());
         const labels = Array.from(this.data.keys());
 
-        this.DATA_OFFSET = (Math.max(...values) - Math.min(...values)) / 1000;
+        let lbl: string[];
+        if (!(labels[0] instanceof Date))
+            lbl = labels.map(l => l.toString());
 
         this.config = {
             type: "line",
             data: {
-                xLabels: labels,
+                xLabels: lbl ? lbl : labels,
                 datasets: [{
                     data: values,
                     borderWidth: this._scale(2),
                     borderColor: "black",
-                    pointBorderColor: 'black',
-                    pointBackgroundColor: 'white',
-                    pointBorderWidth: this._scale(2),
-                    pointRadius: this._scale(3),
+                    pointBorderWidth: 0,
+                    pointBackgroundColor: "black"
                 }]
             },
             options: {
@@ -58,29 +56,17 @@ export class CFLineChart<KeyType> {
                 },
                 scales: {
                     x: {
-                        type: 'time',
-                        time: {
-                            unit: 'month',
-                            displayFormats: {
-                                'month': 'MMM'
-                            }
-                        },
-                        offset: true,
                         ticks: {
                             font: {
                                 size: this.FONT_SIZE
                             },
-                            autoSkip: true,
                         }
-
                     },
                     y: {
-                        offset: true,
                         ticks: {
                             font: {
                                 size: this.FONT_SIZE
-                            },
-
+                            }
                         }
                     }
                 },
@@ -92,8 +78,24 @@ export class CFLineChart<KeyType> {
                 maintainAspectRatio: false
             },
         };
+        if (labels[0] instanceof Date) {
+            console.log("Found Date keys - using time for x axis")
+            this.config['options']['scales']['x'].type = 'time';
+            this.config['options']['scales']['x']['time'] = {
+                unit: 'month',
+                displayFormats: {
+                    'month': 'MMM'
+                }
+            };
+        } else
+            this.config['options']['scales']['x'].type = 'linear';
+
         this.plugins['legend'] = {
             display: false,
+        }
+
+        this.plugins['labelPoint'] = {
+            optPoints: []
         }
     }
 
@@ -101,34 +103,53 @@ export class CFLineChart<KeyType> {
         return val * this.SCALE_FACTOR;
     }
 
+    setXTicksStepSize(step: number) {
+        this.config['options']['scales']['x']['ticks']['stepSize'] = step;
+        return this;
+    }
+
+    markPoints() {
+        for (const [key, val] of this.data)
+            this.plugins['labelPoint']['optPoints'].push({
+                x: key,
+                y: val
+            })
+        return this;
+    }
+
+    showPoints() {
+        Object.assign(this.config['data']['datasets'][0], {
+            pointBorderColor: 'black',
+            pointBackgroundColor: 'white',
+            pointBorderWidth: this._scale(2),
+            pointRadius: this._scale(3),
+        })
+        return this;
+    }
+
+    addOffsetToChart() {
+        this.config['options']['scales']['x']['offset'] = true;
+        this.config['options']['scales']['y']['offset'] = true;
+        return this;
+    }
+
     setRangeBackground(rangeType: RangeType) {
         this.plugins['rangedBackground'] = {
             rangeType,
-            offset: this._scale(20),
+            offset: this._scale(8),
         }
         return this;
     }
 
-    addLabel(text: string, x: KeyType, y: number) {
-        const index = Object.keys(this.annotations).length;
-        this.annotations[`point${index}`] = {
-            type: "label",
-            content: [text],
-            // @ts-ignore
-            xValue: x,
-            yValue: y + this.DATA_OFFSET * this.LABEL_OFFSET,
-            font: {
-                weight: "bold",
-                style: "italic"
-            },
-            adjustScaleRange: true,
+    addLabel(x: KeyType) {
+        const val = this.data.get(x);
+        console.log("adding label for index", x, val);
+        const point = {
+            x,
+            y: val,
+            text: val.toString(),
         }
-        return this;
-    }
-
-    labelPoint(index: KeyType) {
-        const val = this.data.get(index);
-        this.addLabel(val.toString(), index, val);
+        this.plugins['labelPoint']['optPoints'].push(point);
         return this;
     }
 
@@ -143,7 +164,7 @@ export class CFLineChart<KeyType> {
             }
         }
 
-        this.labelPoint(mx);
+        this.addLabel(mx);
         return this;
     }
 
@@ -156,6 +177,7 @@ export class CFLineChart<KeyType> {
         console.log({ width: canvas.width, height: canvas.height });
 
         const ctx = canvas.getContext('2d');
+        console.log(this.config.options.scales.x.ticks)
         //@ts-ignore
         const chart = new Chart(ctx, this.config);
 
@@ -173,7 +195,7 @@ export class CFLineChart<KeyType> {
     toDataURL() {
         if (!this.canvas)
             throw new Error("Chart not built yet");
-        const png = this.canvas.toDataURL();
-        return png;
+        const url = this.canvas.toDataURL();
+        return url;
     }
 }
