@@ -114,7 +114,8 @@ export class CFCacher {
                 promises.push(
                     tdb.updateTable('users')
                         .set({
-                            rating: usr.rating
+                            rating: usr.rating,
+                            max_rating: usr.maxRating
                         })
                         .where('handle', '=', usr.handle)
                         .execute()

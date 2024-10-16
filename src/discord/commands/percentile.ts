@@ -27,11 +27,11 @@ export const percentileCmd: Command = {
 
         const percApi = CFPercentileFactory.get();
 
-        // TODO max rating
         const ratingPercMap = percApi.getMap(type);
+        const usrRating = type === 'max' ? user.max_rating : user.rating;
 
         const chart = new CFLineChart(ratingPercMap)
-            .addLabel(user.rating)
+            .addLabel(usrRating)
             .setRangeBackground('RATING_HORIZONTAL')
             .build()
             .toPNG();
@@ -41,7 +41,7 @@ export const percentileCmd: Command = {
 
         const embed = new EmbedBuilder()
             .setTitle(`${user.handle} - Percentile - ${type}`)
-            .setColor(getRatingColor(user.rating))
+            .setColor(getRatingColor(usrRating))
             .setImage("attachment://canvas.png");
 
         return msg.reply({
