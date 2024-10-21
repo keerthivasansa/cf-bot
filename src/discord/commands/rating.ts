@@ -40,9 +40,13 @@ export const ratingCmd: Command = {
             selectedData.set(d, s.newRating);
         }
 
+        console.log(Bun.write("user_rating.json", JSON.stringify(Array.from(selectedData.entries()))))
+
         const chartUrl = new CFLineChart(selectedData)
             .labelMaxPoint()
             .setRangeBackground('RATING')
+            .addOffsetToChart()
+            .markPoints()
             .build()
             .toPNG();
 

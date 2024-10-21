@@ -1,43 +1,45 @@
-
-type TableRow = (string | number)[];
-interface TableProps {
-    hasHeader?: boolean;
-    columnWidths?: number[]
-}
-
-export function generateTableSVG(tableData: TableRow[], { hasHeader, columnWidths }: TableProps) {
-    const cellWidth = 100;
+export function generateTableSVG(tableData, { hasHeader, columnWidths }) {
+    // Set initial values
     const cellHeight = 50;
-    const tableWidth = tableData[0].length * cellWidth;
-    const tableHeight = tableData.length * cellHeight;
+    let totalWidth = 0;
+    const rows = tableData.length;
 
-    if (!columnWidths)
-        columnWidths = Array.from({ length: tableData[0].length }).fill(8) as number[];
 
-    let svgContent = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${tableWidth}" height="${tableHeight}">
-      <style>
-        .header { fill: #ffcc99; font: 16px sans-serif; }
-        .cell { fill: #fff0e6; font: 16px sans-serif; }
-        .text { fill: black; font: 16px sans-serif; text-anchor: middle; alignment-baseline: middle; }
-        .border { fill: none; stroke: black; stroke-width: 1; }
-      </style>
-    <rect x="0" y="0" width="${tableWidth}" height="8" class="header" />`;
-    
-    for (let row = 0; row < tableData.length; row++) {
-        for (let col = 0; col < tableData[row].length; col++) {
-            const x = col * columnWidths[col];
-            const y = row * cellHeight + 8;
-            const rectClass = row === 0 && hasHeader ? 'header' : 'cell';
-            const text = tableData[row][col];
-            svgContent += `<rect x="${x}" y="${y}" width="${cellWidth}" height="${cellHeight}" class="${rectClass}" />`;
-            svgContent += `<rect x="${x}" y="${y}" width="${cellWidth}" height="${cellHeight}" class="border" />`;
-            svgContent += `<text x="${x + cellWidth / 2}" y="${y + cellHeight / 2}" class="text">${text}</text>`;
-        }
+    const columnWidthsCalculated = columnWidths || tableData[0].map((_, colIndex) => {
+        return Math.max(...tableData.map(row => {
+            const contentWidth = row[colIndex].length * 16;
+            return contentWidth + 20; // Adding padding
+        }));
+    });
+
+    // Calculate total table width
+    totalWidth = columnWidthsCalculated.reduce((acc, width) => acc + width, 0);
+
+    // Create SVG string
+    let svgContent = `<svg width="${totalWidth}" height="${rows * cellHeight + (hasHeader ? cellHeight : 0)}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Add header row if applicable
+    if (hasHeader) {
+        svgContent += `<rect x="0" y="0" width="${totalWidth}" height="${cellHeight}" fill="#f0f0f0" stroke="#000"/>`;
+        tableData[0].forEach((header, colIndex) => {
+            const x = columnWidthsCalculated.slice(0, colIndex).reduce((acc, width) => acc + width, 0);
+            svgContent += `<text x="${x + 10}" y="25" fill="#000">${header}</text>`;
+        });
     }
 
-    svgContent += `</svg>`;
+    // Add table rows
+    for (let rowIndex = hasHeader ? 1 : 0; rowIndex < rows; rowIndex++) {
+        const y = rowIndex * cellHeight + (hasHeader ? cellHeight : 0);
+        svgContent += `<rect x="0" y="${y}" width="${totalWidth}" height="${cellHeight}" stroke="#000"/>`;
 
-    const svgDataURL = `data:image/svg+xml;base64,${Buffer.from(svgContent).toString('base64')}`;
-    return svgDataURL;
+        tableData[rowIndex].forEach((cell, colIndex) => {
+            const x = columnWidthsCalculated.slice(0, colIndex).reduce((acc, width) => acc + width, 0);
+            svgContent += `<text x="${x + 10}" y="${y + 30}">${cell}</text>`;
+        });
+    }
+
+    svgContent += '</svg>';
+    return svgContent;
+    // const imgurl = Buffer.from(svgContent).toString('base64url');
+    // return `data:image/svg+xml;base64,${imgurl}`;
 }
