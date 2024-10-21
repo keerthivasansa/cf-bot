@@ -1,6 +1,7 @@
 import { Client, GatewayIntentBits, Events, Routes, Collection, ActivityType, PresenceUpdateStatus, Interaction } from 'discord.js';
 import { registeredCommands } from './commands';
 import { randomInt } from 'crypto';
+import { DiscordClient } from './client';
 
 export class Bot {
     private readonly client: Client;
@@ -23,21 +24,13 @@ export class Bot {
             throw new Error('Missing environment variables: DISCORD_CLIENT or DISCORD_TOKEN.');
         }
 
-        this.client = new Client({
-            intents: [
-                GatewayIntentBits.GuildMessages,
-                GatewayIntentBits.MessageContent,
-                GatewayIntentBits.Guilds
-            ]
-        });
-
+        this.client = DiscordClient.get();
         this.init();
     }
 
     private async init() {
         try {
             this.registerEvents();
-            await this.client.login(this.TOKEN);
             await this.registerCommands();
             this.startPresenceCycling();
         } catch (error) {

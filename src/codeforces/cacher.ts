@@ -1,6 +1,7 @@
 import { db } from "$db/index";
 import { InsertResult, UpdateResult } from "kysely";
 import { CFApi, CFApiFactory } from "./client";
+import { UserProcesser } from "$src/discord/user";
 
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
@@ -103,6 +104,10 @@ export class CFCacher {
 
     async cacheUsers() {
         const users = await db.selectFrom('users').selectAll().where('handle', 'is not', null).execute();
+
+        const ratingMap = new Map<string, [number, string]>();
+        users.forEach(usr => ratingMap.set(usr.handle, [usr.rating, usr.discordId]));
+
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");
         console.log(handles);
@@ -111,6 +116,10 @@ export class CFCacher {
         await db.transaction().execute(tdb => {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
+                const [oldRating, discordId] = ratingMap.get(usr.handle);
+                
+                UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
+
                 promises.push(
                     tdb.updateTable('users')
                         .set({
