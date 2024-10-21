@@ -13,6 +13,7 @@ export class Bot {
         'Avoiding penalties',
         'Reading editorials',
     ];
+    private readonly TEST_CHANNEL_ID = '1290676332828688454';
 
     constructor() {
         this.CLIENT_ID = process.env.DISCORD_CLIENT!;
@@ -72,6 +73,8 @@ export class Bot {
 
     private async handleInteraction(interaction: Interaction) {
         if (!interaction.isChatInputCommand()) return;
+        if (interaction.channelId === this.TEST_CHANNEL_ID && Bun.env.NODE_ENV === 'PROD')
+            return;
 
         const command = this.client.commands.get(interaction.commandName);
         if (!command) {
