@@ -71,7 +71,6 @@ export const speedCmd: Command = {
         }
 
         const sortedByKey = new Map([...selectedData.entries()].sort((a, b) => a[0] - b[0]));
-        console.log(sortedByKey);
         const finalData: Map<number, number> = new Map();
         for (const [key, value] of sortedByKey.entries()) {
             const k = key;
@@ -80,8 +79,11 @@ export const speedCmd: Command = {
         }
 
         const chartUrl = new CFLineChart(finalData)
-            .labelMaxPoint()
-            .setRangeBackground('RATING')
+            .markPoints()
+            .addOffsetToChart()
+            .setXTicksStepSize(100)
+            .setXLabel("Problem Ratings")
+            .setYLabel("Minutes Spent Solving")
             .build()
             .toPNG();
 
