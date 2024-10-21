@@ -40,12 +40,7 @@ export class CFLineChart<KeyType> {
             },
             options: {
                 layout: {
-                    padding: {
-                        left: this._scale(10),
-                        bottom: this._scale(10),
-                        top: this._scale(10),
-                        right: 0,
-                    }
+                    padding: this._scale(10)
                 },
                 elements: {
                     point: {
@@ -105,6 +100,28 @@ export class CFLineChart<KeyType> {
 
     setXTicksStepSize(step: number) {
         this.config['options']['scales']['x']['ticks']['stepSize'] = step;
+        return this;
+    }
+
+    private setAxisLabel(axis: string, label: string) {
+        const ax = this.config.options.scales[axis];
+        ax.ticks.padding = this._scale(20);
+        ax['title'] = {
+            display: true,
+            text: label,
+            font: {
+                size: this.FONT_SIZE,
+            }
+        }
+    }
+
+    setXLabel(label: string) {
+        this.setAxisLabel('x', label);
+        return this;
+    }
+
+    setYLabel(label: string) {
+        this.setAxisLabel('y', label);
         return this;
     }
 
@@ -198,4 +215,4 @@ export class CFLineChart<KeyType> {
         const url = this.canvas.toDataURL();
         return url;
     }
-}
+}   
