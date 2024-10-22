@@ -4,19 +4,18 @@ import { db } from "$db/index";
 import { CFApiFactory } from "$src/codeforces/client";
 import { CFLineChart } from "$src/graphs/line";
 import { EmbedBuilder } from "@discordjs/builders";
-// import { getRatingColor } from "$src/codeforces/range";
-// import CliTable3 from "cli-table3";
-// import { ratingCmd } from "./rating";
+import { type } from "os";
 
 const INT_MAX = 2147483647;
 
 export const speedCmd: Command = {
     info: new SlashCommandBuilder()
         .setName("speed")
-        .setDescription("Fetch a user's speed of solving problems in contest"),
-        // .addBooleanOption(option => option
-        //     .setName("full")
-        //     .setDescription("Show speed of all contests")),
+        .setDescription("Fetch a user's speed of solving problems in contest")
+        .addIntegerOption(option => option
+            .setName("count")
+            .setDescription("Number of contests to fetch the speed for")
+            .setMinValue(5)),
     
     async execute(msg) {
         const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
@@ -39,12 +38,13 @@ export const speedCmd: Command = {
             return b.contestId - a.contestId;
         })
 
-        console.log(allUserSubmissions.length);
+        // console.log(allUserSubmissions.length);
 
         const selectedData: Map<number, [number, number]> = new Map();
+        let totalContests = msg.options.getInteger("count") === null ? INT_MAX : msg.options.getInteger("count");
         let prevContestID = -1;
         let prevRelativeTime = -1;
-        for (let i = 0; i < allUserSubmissions.length; i++) {
+        for (let i = 0; i < allUserSubmissions.length && totalContests > 0; i++) {
             const verdict = allUserSubmissions[i].verdict
             if (verdict != 'OK') continue;
 
@@ -57,6 +57,7 @@ export const speedCmd: Command = {
             if (prevContestID != allUserSubmissions[i].contestId) {
                 prevRelativeTime = 0;
                 prevContestID = allUserSubmissions[i].contestId;
+                totalContests--;
             }
 
             const relativeTimeInMinutes = (relativeTimeInSeconds - prevRelativeTime) / 60;
@@ -70,9 +71,9 @@ export const speedCmd: Command = {
             prevRelativeTime = relativeTimeInSeconds;
         }
 
-        const sortedByKey = new Map([...selectedData.entries()].sort((a, b) => a[0] - b[0]));
+        const sortedByRating = new Map([...selectedData.entries()].sort((a, b) => a[0] - b[0]));
         const finalData: Map<number, number> = new Map();
-        for (const [key, value] of sortedByKey.entries()) {
+        for (const [key, value] of sortedByRating.entries()) {
             const k = key;
             const v = (value[0] / value[1]);
             finalData.set(k, v);
