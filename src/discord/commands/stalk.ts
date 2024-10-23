@@ -140,7 +140,7 @@ export const stalkCmd: Command = {
                 };
 
                 const submissionTime = wrapText(timeAgo(filteredSubmissions[i].creationTimeSeconds), submissionTimeWidth);
-                table.push([name, rating, submissionTime]);
+                table.push([name, rating.toString(), submissionTime]);
             }
 
             return table.toString();
