@@ -40,7 +40,7 @@ export const speedCmd: Command = {
 
         // console.log(allUserSubmissions.length);
 
-        const selectedData: Map<number, [number, number]> = new Map();
+        const selectedData: Map<number, {totalTime: number, totalCount: number}> = new Map();
         let totalContests = msg.options.getInteger("count") === null ? INT_MAX : msg.options.getInteger("count");
         let prevContestID = -1;
         let prevRelativeTime = -1;
@@ -62,24 +62,24 @@ export const speedCmd: Command = {
 
             const relativeTimeInMinutes = (relativeTimeInSeconds - prevRelativeTime) / 60;
             if (!selectedData.has(problem.rating)) {
-                selectedData.set(problem.rating, [0, 0]);
+                selectedData.set(problem.rating, {totalTime: 0, totalCount: 0});
             }
             const currentValue = selectedData.get(problem.rating)!;
-            currentValue[0] += relativeTimeInMinutes;
-            currentValue[1]++;
+            currentValue.totalTime += relativeTimeInMinutes;
+            currentValue.totalCount++;
 
             prevRelativeTime = relativeTimeInSeconds;
         }
 
         const sortedByRating = new Map([...selectedData.entries()].sort((a, b) => a[0] - b[0]));
-        const finalData: Map<number, number> = new Map();
+        const ratingTimeMap: Map<number, number> = new Map();
         for (const [key, value] of sortedByRating.entries()) {
             const k = key;
-            const v = (value[0] / value[1]);
-            finalData.set(k, v);
+            const v = (value.totalTime / value.totalCount);
+            ratingTimeMap.set(k, v);
         }
 
-        const chartUrl = new CFLineChart(finalData)
+        const chartUrl = new CFLineChart(ratingTimeMap)
             .markPoints()
             .addOffsetToChart()
             .setXTicksStepSize(100)

@@ -3,7 +3,6 @@ import type { Command } from "../type";
 import { db } from "$db/index";
 import { CFApiFactory } from "$src/codeforces/client";
 import CliTable3 from "cli-table3";
-import { all } from "axios";
 
 const INT_MAX = 2147483647;
 
@@ -35,26 +34,26 @@ export const stalkCmd: Command = {
         const sortByRating = msg.options.getBoolean("sort");
         if (sortByRating) {
             allUserSubmissions.sort((a, b) => {
-                if (a.problem.rating === b.problem.rating) {
-                    return b.creationTimeSeconds - a.creationTimeSeconds;
-                }
-
                 return b.problem.rating - a.problem.rating;
             });
         }
-        else {
-            allUserSubmissions.sort((a, b) => {
-                return b.creationTimeSeconds - a.creationTimeSeconds;
-            });
-        }
 
-        const onlyContest = msg.options.getBoolean("contest");
+        // console.log(allUserSubmissions.length);
+        // for (let i = 0; i < Math.min(INT_MAX, allUserSubmissions.length); i++) {
+        //     if (allUserSubmissions[i].problem.rating === 2800) console.log(i);
+        //     // console.log(allUserSubmissions[i].problem.rating);
+        // }
+
+        const onlyContest = msg.options.getBoolean("contest") != null ? msg.options.getBoolean("contest") : false;
+        console.log(onlyContest);
         const processedProblems = new Set<string>();
         const filteredSubmissions = allUserSubmissions.filter((submission) => {
-            if (submission.relativeTimeSeconds === INT_MAX) return false;
+            if (submission.relativeTimeSeconds === INT_MAX && onlyContest) return false;
             
             if (submission.verdict === 'OK' && !processedProblems.has(submission.problem.name)) {
                 processedProblems.add(submission.problem.name);
+
+                // console.log(submission.problem.rating);
                 return true;
             }
             return false;
@@ -63,10 +62,49 @@ export const stalkCmd: Command = {
         const chunkSize = 10; // Show 10 submissions per page
         const totalPages = Math.ceil(filteredSubmissions.length / chunkSize);
 
-        // Function to create paginated submissions
+        const wrapText = (text: string, maxWidth: number): string => {
+            const words = text.split(' ');
+            let line = '';
+            let result = '';
+            for (let word of words) {
+                if (line.length + word.length > maxWidth) {
+                    result += line + '\n';  // wrap the text
+                    line = word + ' ';
+                } else {
+                    line += word + ' ';
+                }
+            }
+            result += line.trim(); // Add the last line
+            return result;
+        };
+
+        const getEmojiForRating = (rating: number): string => {
+            if (rating < 1200) return "🔘";
+            if (rating < 1400) return "🟢";    
+            if (rating < 1600) return "🩵";    
+            if (rating < 1900) return "🔵";    
+            if (rating < 2100) return "🟣";    
+            if (rating < 2300) return "🟡";   
+            if (rating < 2400) return "🟠";   
+            if (rating < 2600) return "🔴";    
+            if (rating < 3000) return "🔥";    
+            if (rating < 3500) return "✨";    
+            return "👑";
+        };
+
+        const formatRating = (rating: number): string => {
+            const emoji = getEmojiForRating(rating);
+            const ratingString = rating.toString();
+        
+            return `${emoji} ${ratingString}`;
+        };
+
         const createSubmissionTable = (page: number): string => {
             const start = page * chunkSize;
             const end = Math.min(start + chunkSize, filteredSubmissions.length);
+            const nameWidth = 19;
+            const ratingWidth = 11;
+            const submissionTimeWidth = 19;
             const table = new CliTable3({
                 head: ['Problem Name', 'Rating', 'Submission Time'],
                 style: {
@@ -74,13 +112,13 @@ export const stalkCmd: Command = {
                     border: [], // disable colors for the border
                 },
                 colAligns: ['center', 'center', 'center'],
-                colWidths: [31, 8, 23], // set the widths of each column (optional)
+                colWidths: [nameWidth, ratingWidth, submissionTimeWidth], // set the widths of each column (optional)
             });
 
             for (let i = start; i < end; i++) {
                 const problem = filteredSubmissions[i].problem;
-                const rating = problem.rating ? problem.rating.toString() : '?';
-                const name = problem.name;
+                const rating = problem.rating ? formatRating(problem.rating) : '?';
+                const name = wrapText(problem.name, nameWidth); // Wrap the text if it's too long
 
                 const timeAgo = (timeInS: number): string => {
                     const now = Date.now();
@@ -101,14 +139,13 @@ export const stalkCmd: Command = {
                     }
                 };
 
-                const time = timeAgo(filteredSubmissions[i].creationTimeSeconds);
-                table.push([name, rating, time]);
+                const submissionTime = wrapText(timeAgo(filteredSubmissions[i].creationTimeSeconds), submissionTimeWidth);
+                table.push([name, rating, submissionTime]);
             }
 
             return table.toString();
         };
 
-        // Initial display
         let currentPage = 0;
         const tableMsg = createSubmissionTable(currentPage);
 
@@ -131,7 +168,6 @@ export const stalkCmd: Command = {
             components: [row],
         });
 
-        // Interaction handler
         const filter = (i: any) => i.user.id === msg.user.id;
         const collector = msg.channel.createMessageComponentCollector({ filter, time: 60000 });
 
