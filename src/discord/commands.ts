@@ -6,6 +6,7 @@ import { perfCmd } from "./commands/perf";
 import { probRatCmd } from "./commands/probrat";
 import { ratingCmd } from "./commands/rating";
 import { verifyCmd } from "./commands/verify";
+import { ranklistCmd } from "./commands/ranklist";
 
 export const registeredCommands = [
     verifyCmd,
@@ -15,5 +16,6 @@ export const registeredCommands = [
     ratingCmd,
     perfCmd,
     percentileCmd,
-    leaderboardCmd
+    leaderboardCmd,
+    ranklistCmd
 ]
