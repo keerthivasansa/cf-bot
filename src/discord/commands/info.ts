@@ -10,12 +10,10 @@ export const infoCmd: Command = {
         .setDescription("Get your current registered handle"),
 
     async execute(msg) {
-
         const user = await db.selectFrom('users').select([
             'handle',
             'rating',
             'score',
-            sql`ROW_NUMBER() OVER (ORDER BY score DESC)`.$castTo<number>().as("rank")
         ])
             .where('discordId', '=', msg.user.id).executeTakeFirst();
 
@@ -23,6 +21,18 @@ export const infoCmd: Command = {
             msg.reply('You have not registered your handle yet!');
             return;
         }
+        const ranks = await db.selectFrom('users').select([
+            sql<number>`ROW_NUMBER() OVER (ORDER BY score desc)`.as('rank'),
+            'discordId'
+        ]).execute();
+
+        let usrRank = -1;
+        for (let usr of ranks) {
+            if (usr.discordId == msg.user.id) {
+                usrRank = usr.rank;
+                break;
+            }
+        };
 
         const table = new CliTable3({
             style: {
@@ -37,7 +47,7 @@ export const infoCmd: Command = {
             ['Handle', user.handle],
             ['Rating', user.rating],
             ['Score', user.score],
-            ['Rank', `#${user.rank}`]
+            ['Rank', `#${usrRank}`]
         );
 
         return msg.reply(`\`\`\`js\n${table.toString()}\`\`\``);
