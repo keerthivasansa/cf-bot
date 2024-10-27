@@ -105,6 +105,22 @@ class CodeforcesApi {
             return [];
         return data.result;
     }
+
+    async getContestStandings(contestId: number, handles: string) {
+        await this.tasker.waitForRelease();
+        const resp = await this.client.get('contest.standings', {
+            params: {
+                contestId,
+                handles
+            }
+        });
+        const data = resp.data as CfResult<{ rows: RanklistRow[], problems: Problem[] }>;
+        if (data.status != 'OK')
+            throw new Error(data.comment || 'Error fetching contest standings');
+        return data.result;
+    }
+    
+    
 }
 
 export type CFApi = CodeforcesApi;

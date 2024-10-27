@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../type";
 import { db } from "$db/index";
-import axios from "axios";
+import { CFApiFactory } from "src/codeforces/client"; // Import CFApiFactory
 import CliTable3 from "cli-table3";
 
 export const ranklistCmd: Command = {
@@ -18,25 +18,18 @@ export const ranklistCmd: Command = {
         const contestId = msg.options.getInteger("contest");
 
         // Fetch user handles from the database
-        const userHandles = await fetchUserHandlesFromDB();
+        const userHandles = new Set<string>();
+        const users = await db.selectFrom('users').select('handle').execute();
+        users.forEach(user => {
+            userHandles.add(user.handle.trim().toLowerCase());
+        });
 
         // Convert the set of user handles to a semicolon-separated string
         const handlesParam = Array.from(userHandles).join(';');
 
-        // Make an API request to contest.standings with the handles parameter
-        const url = `https://codeforces.com/api/contest.standings?contestId=${contestId}&from=1&count=50000&showUnofficial=true&handles=${handlesParam}`;
-
         try {
-            const response = await axios.get(url);
-            const data = response.data;
-
-            if (data.status !== 'OK') {
-                msg.reply("Error fetching contest standings");
-                return;
-            }
-
-            const standings = data.result.rows;
-            const problems = data.result.problems;
+            // Use the cfapi method
+            const { rows: standings, problems } = await CFApiFactory.get().getContestStandings(contestId, handlesParam);
 
             // Filter the API response based on the user handles and participant type
             const ranklist: any[] = [];
@@ -87,21 +80,20 @@ export const ranklistCmd: Command = {
             // Send the table as a reply
             msg.reply(`\`\`\`js\n${table.toString()}\`\`\``);
 
-        } catch (error) {
-            msg.reply("Error fetching data from API");
+        } 
+        catch (error) {
+            if (error && error.response && error.response.data && error.response.data.comment) {
+                msg.reply(removeExtra(`${error.response.data.comment}`));
+            } 
+            // else if (error && error.message) {
+            //     msg.reply(`Error fetching contest standings: ${error.message}`);
+            // } 
+            else {
+                msg.reply("Error fetching data from API");
+            }
         }
     },
 };
-
-// Fetch user handles from the database
-async function fetchUserHandlesFromDB(): Promise<Set<string>> {
-    const userHandles = new Set<string>();
-    const users = await db.selectFrom('users').select('handle').execute();
-    users.forEach(user => {
-        userHandles.add(user.handle.trim().toLowerCase());
-    });
-    return userHandles;
-}
 
 // Format time
 function formatTime(seconds: number | string): string {
@@ -117,4 +109,12 @@ function formatTime(seconds: number | string): string {
     } else {
         return `${paddedMinutes}:${paddedSeconds}`;
     }
+}
+
+function removeExtra(input: string): string {
+    const colonIndex = input.indexOf(':');
+    if (colonIndex === -1) {
+        return input; 
+    }
+    return input.substring(colonIndex + 1).trim();
 }
