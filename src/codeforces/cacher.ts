@@ -42,23 +42,22 @@ export class CFCacher {
     }
 
     async cacheProblems() {
-        let { cached_contest } = await db.selectFrom("problems").select(({ fn, val, ref }) => [
-            fn.max('contestId').as('cached_contest')
-        ]).executeTakeFirst();
+        let rows = await db.selectFrom('problems').select(({ fn, val, ref }) => [
+            'contestId',
+            fn.sum('official_rating').as('rating')
+        ]).groupBy('contestId').execute();
 
-        if (!cached_contest)
-            cached_contest = 0;
+        const ratedContest = new Set<number>();
+        const cachedContest = new Set<number>();
 
-        let { rated_contest } = await db.selectFrom('problems').select(({ fn, val, ref }) => [
-            fn.max('contestId').as('rated_contest')
-        ]).where('official_rating', 'is not', null).executeTakeFirst();
-
-        if (!rated_contest)
-            rated_contest = 0;
+        rows.forEach(row => {
+            console.log(row);
+            if (row.rating)
+                ratedContest.add(row.contestId);
+            cachedContest.add(row.contestId);
+        });
 
         const tx = db.transaction();
-
-        console.log({ cached_contest, rated_contest });
 
         console.time("fetch");
         const problems = await this.cfApi.getAllProblems();
@@ -73,18 +72,8 @@ export class CFCacher {
             for (let i = 0; i < problems.length; i++) {
                 const prob = problems[i];
 
-                // if it's greater than cached contest -> insert new problems.
-                if (prob.contestId > cached_contest && prob.contestId) {
-                    const q = tdb.insertInto('problems').values({
-                        contestId: prob.contestId,
-                        index: prob.index,
-                        official_rating: prob.rating
-                    }).execute();
-                    promises.push(q);
-                }
-
-                // if it's greater than rated contest and has problem rating -> update official rating.
-                else if (prob.contestId > rated_contest && prob.rating && prob.contestId) {
+                if (prob.rating && prob.contestId && !ratedContest.has(prob.contestId)) {
+                    console.log('rating contest', prob.contestId);
                     const q = tdb.updateTable('problems').set({
                         official_rating: prob.rating
                     }).where(eb =>
@@ -94,6 +83,16 @@ export class CFCacher {
                         ])
                     );
                     promises.push(q.execute());
+                }
+
+                else if (prob.contestId && !cachedContest.has(prob.contestId)) {
+                    console.log('caching contest', prob.contestId);
+                    const q = tdb.insertInto('problems').values({
+                        contestId: prob.contestId,
+                        index: prob.index,
+                        official_rating: prob.rating
+                    }).execute();
+                    promises.push(q);
                 }
             }
 
@@ -117,7 +116,7 @@ export class CFCacher {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
                 const [oldRating, discordId] = ratingMap.get(usr.handle);
-                
+
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
                 promises.push(
