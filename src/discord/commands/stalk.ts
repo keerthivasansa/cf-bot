@@ -12,10 +12,10 @@ export const stalkCmd: Command = {
         .setDescription("Fetch the most recent submissions of a user")
         .addBooleanOption(option => option
             .setName("sort")
-            .setDescription("Show entire performance history"))
+            .setDescription("Sort as per rating"))
         .addBooleanOption(option => option
             .setName("contest")
-            .setDescription("Show entire performance history")),
+            .setDescription("Show only contest problems")),
     
     async execute(msg) {
         await msg.deferReply(); // defer reply to avoid timeout
@@ -38,12 +38,6 @@ export const stalkCmd: Command = {
             });
         }
 
-        // console.log(allUserSubmissions.length);
-        // for (let i = 0; i < Math.min(INT_MAX, allUserSubmissions.length); i++) {
-        //     if (allUserSubmissions[i].problem.rating === 2800) console.log(i);
-        //     // console.log(allUserSubmissions[i].problem.rating);
-        // }
-
         const onlyContest = msg.options.getBoolean("contest") != null ? msg.options.getBoolean("contest") : false;
         console.log(onlyContest);
         const processedProblems = new Set<string>();
@@ -53,7 +47,6 @@ export const stalkCmd: Command = {
             if (submission.verdict === 'OK' && !processedProblems.has(submission.problem.name)) {
                 processedProblems.add(submission.problem.name);
 
-                // console.log(submission.problem.rating);
                 return true;
             }
             return false;
