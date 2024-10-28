@@ -9,7 +9,7 @@ export const CF_RATING_RANGE = [
     { color: '#ffcc88', start: 2100 },
     { color: '#ffbb55', start: 2300 },
     { color: '#ff7777', start: 2400 },
-    { color: '#ff7777', start: 2600 },
+    { color: '#ff3333', start: 2600 },
     { color: '#aa0000', start: 3000 },
 ]
 
