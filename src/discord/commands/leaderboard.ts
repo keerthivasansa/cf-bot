@@ -18,7 +18,7 @@ export const leaderboardCmd: Command = {
                 border: [], //disable colors for the border
             },
             colAligns: ['center', 'center', 'center', 'center'],
-            colWidths: [5, 24, 24, 8]
+            colWidths: [5, 19, 19, 8]
         });
 
         table.push(
