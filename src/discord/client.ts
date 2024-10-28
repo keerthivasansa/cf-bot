@@ -32,10 +32,4 @@ export class DiscordClient {
         this.guild = await this.client.guilds.fetch(this.GUILD_ID);
         return this.guild;
     }
-
-    static async getUser(discordId: string) {
-        const guild = await this.getGuild();
-        const member = await guild.members.fetch(discordId);
-        return member;
-    }
 }

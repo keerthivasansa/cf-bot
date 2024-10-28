@@ -24,7 +24,6 @@ export class Bot {
         if (!this.CLIENT_ID || !this.TOKEN) {
             throw new Error('Missing environment variables: DISCORD_CLIENT or DISCORD_TOKEN.');
         }
-
         this.client = DiscordClient.get();
         this.init();
     }
@@ -43,7 +42,6 @@ export class Bot {
         this.client.on(Events.ClientReady, () => {
             console.log(`${this.client.user?.tag} is now online!`);
         });
-
         this.client.on(Events.InteractionCreate, (interaction) => this.handleInteraction(interaction));
     }
 
