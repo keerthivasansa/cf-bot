@@ -15,6 +15,7 @@ export class Bot {
         'Reading editorials',
     ];
     private readonly TEST_CHANNEL_ID = '1290676332828688454';
+    private readonly MAIN_CHANNEL_ID = '1300509824953487511';
 
     constructor() {
         this.CLIENT_ID = process.env.DISCORD_CLIENT!;
@@ -66,7 +67,10 @@ export class Bot {
 
     private async handleInteraction(interaction: Interaction) {
         if (!interaction.isChatInputCommand()) return;
+
         if (interaction.channelId === this.TEST_CHANNEL_ID && Bun.env.NODE_ENV === 'PROD')
+            return;
+        else if (interaction.channelId !== this.MAIN_CHANNEL_ID)
             return;
 
         const command = this.client.commands.get(interaction.commandName);

@@ -51,7 +51,6 @@ export class CFCacher {
         const cachedContest = new Set<number>();
 
         rows.forEach(row => {
-            console.log(row);
             if (row.rating)
                 ratedContest.add(row.contestId);
             cachedContest.add(row.contestId);
