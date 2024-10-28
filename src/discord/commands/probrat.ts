@@ -24,32 +24,34 @@ export const probRatCmd: Command = {
         if (cachedProb.length < 1 || !cachedProb[0].predicted_rating) {
             const resp = await api.getContestRatings(contestId);
             const problems = resp.objects;
+            const hasPrediction = problems.some((prob) => prob.rating !== 800)
 
-            await db.transaction().execute(async (tdb) => {
-                for (const p of problems) {
-                    const rating = Math.round(p.rating / 100) * 100;
-                    const probRating = Math.max(800, rating);
-                    const index = p.url.match("\/problem\/([A-Z]\\d?)$")[1];
-
-                    // update for short time.
-                    for (let i = 0; i < cachedProb.length; i++) {
-                        if (cachedProb[i].index == index) {
-                            cachedProb[i].predicted_rating = probRating;
-                            console.log(index);
+            if (hasPrediction)
+                await db.transaction().execute(async (tdb) => {
+                    // clist weird behaviour if it hasnt predicted yet
+                    for (const p of problems) {
+                        const rating = Math.round(p.rating / 100) * 100;
+                        const probRating = Math.max(800, rating);
+                        const index = p.url.match("\/problem\/([A-Z]\\d?)$")[1];
+                        // update for short time.
+                        for (let i = 0; i < cachedProb.length; i++) {
+                            if (cachedProb[i].index == index) {
+                                cachedProb[i].predicted_rating = probRating;
+                                console.log(index, probRating);
+                            }
                         }
-                    }
 
-                    // cache for later use.
-                    await tdb.updateTable("problems").set({
-                        predicted_rating: probRating
-                    }).where(
-                        eb => eb.and([
-                            eb('contestId', '=', contestId),
-                            eb('index', '=', index)
-                        ])
-                    ).execute();
-                }
-            });
+                        // cache for later use.
+                        await tdb.updateTable("problems").set({
+                            predicted_rating: probRating
+                        }).where(
+                            eb => eb.and([
+                                eb('contestId', '=', contestId),
+                                eb('index', '=', index)
+                            ])
+                        ).execute();
+                    }
+                });
         }
         console.log(cachedProb);
 
