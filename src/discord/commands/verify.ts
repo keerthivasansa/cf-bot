@@ -61,9 +61,13 @@ export const verifyCmd: Command = {
                 return;
             }
 
+            const info = await cfApi.getUsersInfo([handle]);
+
             await db.insertInto('users').values({
                 discordId: msg.user.id,
                 handle,
+                rating: info[0].rating,
+                max_rating: info[0].maxRating
             }).execute();
 
             await confirmation.update(`Handle: \`${handle}\` has been verified!`);
