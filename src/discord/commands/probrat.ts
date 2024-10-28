@@ -52,6 +52,8 @@ export const probRatCmd: Command = {
                         ).execute();
                     }
                 });
+            else
+                console.log("Clists has no prediction yet")
         }
         console.log(cachedProb);
 
