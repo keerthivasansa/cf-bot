@@ -102,8 +102,8 @@ export class CFCacher {
     async cacheUsers() {
         const users = await db.selectFrom('users').selectAll().where('handle', 'is not', null).execute();
 
-        const ratingMap = new Map<string, [number, string]>();
-        users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.discordId]));
+        const ratingMap = new Map<string, [number, string, string]>();
+        users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.discordId, usr.handle]));
 
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");
@@ -118,8 +118,8 @@ export class CFCacher {
                     console.log("missing info for", usr.handle)
                     return;
                 }
-                const [oldRating, discordId] = ratingMap.get(handle);
-
+                const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
+                console.log(handle, oldRating, usr.rating);
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
                 promises.push(
@@ -128,7 +128,7 @@ export class CFCacher {
                             rating: usr.rating,
                             max_rating: usr.maxRating
                         })
-                        .where('handle', '=', usr.handle)
+                        .where('handle', '=', ogHandle)
                         .execute()
                 )
             });
