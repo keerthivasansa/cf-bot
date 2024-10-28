@@ -94,7 +94,6 @@ export class CFCacher {
                     promises.push(q);
                 }
             }
-
             await Promise.all(promises);
         });
         console.timeEnd("caching");
@@ -104,21 +103,22 @@ export class CFCacher {
         const users = await db.selectFrom('users').selectAll().where('handle', 'is not', null).execute();
 
         const ratingMap = new Map<string, [number, string]>();
-        users.forEach(usr => ratingMap.set(usr.handle, [usr.rating, usr.discordId]));
+        users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.discordId]));
 
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");
-        console.log(handles);
+        console.log({ handles });
         const info = await this.cfApi.getUsersInfo(handles);
         console.time("caching users");
         await db.transaction().execute(tdb => {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
-                if (!usr.handle || !ratingMap.get(usr.handle)){
+                const handle = usr.handle?.toLowerCase();
+                if (!handle || !ratingMap.get(handle)){
                     console.log("missing info for", usr.handle)
                     return;
                 }
-                const [oldRating, discordId] = ratingMap.get(usr.handle);
+                const [oldRating, discordId] = ratingMap.get(handle);
 
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
