@@ -2,7 +2,7 @@ import { QueuedTasker } from "$src/common/queue";
 import axios from "axios";
 
 class CodeforcesApi {
-    private readonly INTERVAL = 2_000;
+    private readonly INTERVAL = 150; // 2_000;
     private baseUrl = 'https://codeforces.com/api/';
     private client: Axios.AxiosInstance;
     private tasker: QueuedTasker;
