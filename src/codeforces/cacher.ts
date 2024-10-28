@@ -114,6 +114,10 @@ export class CFCacher {
         await db.transaction().execute(tdb => {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
+                if (!usr.handle || !ratingMap.get(usr.handle)){
+                    console.log("missing info for", usr.handle)
+                    return;
+                }
                 const [oldRating, discordId] = ratingMap.get(usr.handle);
 
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
