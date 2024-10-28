@@ -1,4 +1,4 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../type";
 import { ClistsApi } from "$src/clists/client";
 import { db } from "$db/index";
@@ -21,11 +21,11 @@ export const probRatCmd: Command = {
 
         const cachedProb = await db.selectFrom('problems').selectAll().where('contestId', '=', contestId).orderBy('index asc').execute();
 
-        if (!cachedProb[0].predicted_rating) {
+        if (cachedProb.length < 1 || !cachedProb[0].predicted_rating) {
             const resp = await api.getContestRatings(contestId);
             const problems = resp.objects;
 
-            db.transaction().execute(async (tdb) => {
+            await db.transaction().execute(async (tdb) => {
                 for (const p of problems) {
                     const rating = Math.round(p.rating / 100) * 100;
                     const probRating = Math.max(800, rating);
@@ -33,8 +33,10 @@ export const probRatCmd: Command = {
 
                     // update for short time.
                     for (let i = 0; i < cachedProb.length; i++) {
-                        if (cachedProb[i].index == index)
+                        if (cachedProb[i].index == index) {
                             cachedProb[i].predicted_rating = probRating;
+                            console.log(index);
+                        }
                     }
 
                     // cache for later use.
@@ -49,6 +51,7 @@ export const probRatCmd: Command = {
                 }
             });
         }
+        console.log(cachedProb);
 
         let table = new CliTable3({
             head: ['#', 'Actual', 'Predicted'],
@@ -57,7 +60,7 @@ export const probRatCmd: Command = {
                 border: [], //disable colors for the border
             },
             colAligns: ['center', 'center', 'center'],
-            colWidths: [3, 8, 8], //set the widths of each column (optional)
+            colWidths: [4, 8, 8], //set the widths of each column (optional)
         });
 
         for (const prob of cachedProb)

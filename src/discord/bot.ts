@@ -1,6 +1,7 @@
 import { Client, GatewayIntentBits, Events, Routes, Collection, ActivityType, PresenceUpdateStatus, Interaction } from 'discord.js';
 import { registeredCommands } from './commands';
 import { randomInt } from 'crypto';
+import { DiscordClient } from './client';
 
 export class Bot {
     private readonly client: Client;
@@ -13,6 +14,7 @@ export class Bot {
         'Avoiding penalties',
         'Reading editorials',
     ];
+    private readonly TEST_CHANNEL_ID = '1290676332828688454';
 
     constructor() {
         this.CLIENT_ID = process.env.DISCORD_CLIENT!;
@@ -22,21 +24,13 @@ export class Bot {
             throw new Error('Missing environment variables: DISCORD_CLIENT or DISCORD_TOKEN.');
         }
 
-        this.client = new Client({
-            intents: [
-                GatewayIntentBits.GuildMessages,
-                GatewayIntentBits.MessageContent,
-                GatewayIntentBits.Guilds
-            ]
-        });
-
+        this.client = DiscordClient.get();
         this.init();
     }
 
     private async init() {
         try {
             this.registerEvents();
-            await this.client.login(this.TOKEN);
             await this.registerCommands();
             this.startPresenceCycling();
         } catch (error) {
@@ -72,6 +66,8 @@ export class Bot {
 
     private async handleInteraction(interaction: Interaction) {
         if (!interaction.isChatInputCommand()) return;
+        if (interaction.channelId === this.TEST_CHANNEL_ID && Bun.env.NODE_ENV === 'PROD')
+            return;
 
         const command = this.client.commands.get(interaction.commandName);
         if (!command) {
