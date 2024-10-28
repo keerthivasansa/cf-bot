@@ -22,7 +22,7 @@ export const infoCmd: Command = {
             return;
         }
         const ranks = await db.selectFrom('users').select([
-            sql<number>`ROW_NUMBER() OVER (ORDER BY score desc)`.as('rank'),
+            sql<number>`ROW_NUMBER() OVER (ORDER BY rating desc)`.as('rank'),
             'discordId'
         ]).execute();
 
