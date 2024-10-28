@@ -74,7 +74,8 @@ export const ranklistCmd: Command = {
                     'padding-right': 0,
                 },
             });
-
+            
+            // @ts-ignore
             table.push(...tableData.map(row => Object.values(row)));
 
             // Send the table as a reply

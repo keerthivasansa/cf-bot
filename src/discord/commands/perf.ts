@@ -45,6 +45,7 @@ export const perfCmd: Command = {
         }
 
         const chartUrl = new CFLineChart(selectedData)
+            .markPoints()
             .labelMaxPoint()
             .setRangeBackground('RATING')
             .build()

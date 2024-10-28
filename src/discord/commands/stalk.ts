@@ -34,6 +34,18 @@ export const stalkCmd: Command = {
         const sortByRating = msg.options.getBoolean("sort");
         if (sortByRating) {
             allUserSubmissions.sort((a, b) => {
+                if (b.problem.rating === undefined && a.problem.rating === undefined) {
+                    return b.creationTimeSeconds - a.creationTimeSeconds;
+                }
+
+                if (b.problem.rating === undefined) {
+                    return 0 - a.problem.rating;
+                }
+
+                if (a.problem.rating === undefined) {
+                    return b.problem.rating;
+                }
+
                 return b.problem.rating - a.problem.rating;
             });
         }

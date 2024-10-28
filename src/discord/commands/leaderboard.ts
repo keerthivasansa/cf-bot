@@ -10,19 +10,19 @@ export const leaderboardCmd: Command = {
         .setDescription("View current leaderboard"),
 
     async execute(msg) {
-        const users = await db.selectFrom("users").selectAll().orderBy("score desc").limit(10).execute();
+        const users = await db.selectFrom("users").selectAll().orderBy("rating desc").limit(10).execute();
 
         const table = new CliTable3({
             style: {
                 head: [], //disable colors in header cells
                 border: [], //disable colors for the border
             },
-            colAligns: ['center', 'center', 'center'],
-            colWidths: [5, 24, 8]
+            colAligns: ['center', 'center', 'center', 'center'],
+            colWidths: [5, 24, 24, 8]
         });
 
         table.push(
-            ['#', 'User', 'Score']
+            ['#', 'User', 'Handle', 'Rating']
         )
 
         const discord = DiscordClient.get();
@@ -30,7 +30,7 @@ export const leaderboardCmd: Command = {
         for (let i = 0; i < users.length; i++) {
             const usr = users[i];
             const member = await discord.users.fetch(usr.discordId);
-            table.push([(i + 1).toString(), member.displayName, usr.score]);
+            table.push([(i + 1).toString(), member.displayName, usr.handle, usr.rating]);
         }
 
         const out = `\`\`\`${table.toString()}\`\`\``;
