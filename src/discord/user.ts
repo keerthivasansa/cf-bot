@@ -9,12 +9,14 @@ export class UserProcesser {
         for (const serverId of [TEST_SERVER_ID, MAIN_SERVER_ID]) {
             const guild = discordClient.guilds.cache.get(serverId);
             const member = await guild.members.fetch(discordId);
+            if (!member)
+                continue;
             const roleId = getRole(newRating, serverId), oldRoleId = getRole(oldRating, serverId);
             const oldRole = guild.roles.cache.get(oldRoleId);
             const role = guild.roles.cache.get(roleId);
             if (member.roles.cache.some(role => role.id === roleId)) {
                 console.log("already exists");
-                return;
+                continue;
             }
             await member.roles.add(role);
             if (oldRoleId != roleId)
