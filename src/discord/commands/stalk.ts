@@ -71,7 +71,7 @@ export const stalkCmd: Command = {
             return false;
         });
 
-        const chunkSize = 10; // Show 10 submissions per page
+        const chunkSize = 10;
         const totalPages = Math.ceil(filteredSubmissions.length / chunkSize);
 
         const wrapText = (text: string, maxWidth: number): string => {
