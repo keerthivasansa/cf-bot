@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, Events, Routes, Collection, ActivityType, Pr
 import { registeredCommands } from './commands';
 import { randomInt } from 'crypto';
 import { DiscordClient } from './client';
+import { TEST_SERVER_ID } from './roles';
 
 export class Bot {
     private readonly client: Client;
@@ -68,7 +69,7 @@ export class Bot {
 
         if (interaction.channelId === this.TEST_CHANNEL_ID && Bun.env.NODE_ENV === 'PROD')
             return;
-        else if (interaction.channelId !== this.MAIN_CHANNEL_ID)
+        else if (interaction.channelId !== this.MAIN_CHANNEL_ID && interaction.guildId !== TEST_SERVER_ID)
             return;
 
         const command = this.client.commands.get(interaction.commandName);
