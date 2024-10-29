@@ -12,10 +12,17 @@ export const ratingCmd: Command = {
         .setDescription("Fetch a user's rating graph")
         .addBooleanOption(option => option
             .setName("full")
-            .setDescription("Show entire history")),
+            .setDescription("Show entire history"))
+        .addUserOption(option => option
+            .setName('user')
+            .setDescription('Mention the user you want to check the rating of')
+        ),
 
     async execute(msg) {
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
+        const mention = msg.options.getUser('user');
+        const selectedUser = mention ? mention : msg.user;
+
+        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
         const showEntire = msg.options.getBoolean('full');
 
         if (!user)
@@ -39,8 +46,6 @@ export const ratingCmd: Command = {
             currRating = s.newRating;
             selectedData.set(d, s.newRating);
         }
-
-        console.log(Bun.write("user_rating.json", JSON.stringify(Array.from(selectedData.entries()))))
 
         const chartUrl = new CFLineChart(selectedData)
             .labelMaxPoint()

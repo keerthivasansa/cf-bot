@@ -175,11 +175,13 @@ export class CFLineChart<KeyType> {
         let mxVal = 0;
 
         for (const [key, value] of this.data.entries()) {
+            console.log(key, value);
             if (value > mxVal) {
-                mxVal = mxVal;
+                mxVal = value;
                 mx = key;
             }
         }
+        console.log({ mx, mxVal });
 
         this.addLabel(mx);
         return this;

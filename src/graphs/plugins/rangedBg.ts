@@ -1,4 +1,5 @@
 import { CF_RATING_RANGE } from "$src/codeforces/range";
+import { Chart } from "chart.js";
 
 interface RangeTypeI {
     type: 'horizontal' | 'vertical',
@@ -21,8 +22,8 @@ export type RangeType = 'RATING' | 'RATING_HORIZONTAL';
 
 export const PLUGIN_RANGED_FILL = {
     id: 'rangedBackground',
-    beforeDraw: (chart, args, options) => {
-        const { ctx, chartArea: { left, right, top, bottom } } = chart;
+    beforeDraw: (chart: Chart, args, options) => {
+        const { ctx, chartArea: { left, right, top, bottom }, scales } = chart;
         const { rangeType, offset } = options;
 
         ctx.save();
@@ -34,14 +35,16 @@ export const PLUGIN_RANGED_FILL = {
             return;
 
         const bgRange = rangeTypes[rangeType];
+        const { x, y } = scales;
         let min: number, max: number;
-        const scale = bgRange.type == 'horizontal' ? chart.scales.x : chart.scales.y;
 
-        if (scale) {
-            min = Math.max(0, scale.min) - offset;
-            max = scale.max + offset;
-        } else
-            throw new Error("Y Scale doesn't exist");
+        if (bgRange.type === 'vertical') {
+            min = y.getValueForPixel(bottom);
+            max = y.getValueForPixel(top);
+        } else {
+            min = x.getValueForPixel(left);
+            max = x.getValueForPixel(right);
+        }
 
         const innerWidth = right - left;
         const innerHeight = bottom - top;
@@ -51,8 +54,6 @@ export const PLUGIN_RANGED_FILL = {
         const conv = fullArea / (max - min);
         let curr = 0, prevEnd = max;
 
-        console.log({ min, max })
-
         for (let i = 0; i < bgRange.ranges.length; i++) {
             const range = bgRange.ranges[i];
             if (range.start > max)
@@ -61,11 +62,13 @@ export const PLUGIN_RANGED_FILL = {
 
             let blockSize = 0;
             if (bgRange.type === 'vertical') {
-                let st = Math.max(range.start, min);
-                blockSize = (prevEnd - Math.max(range.start, min)) * conv;
-                prevEnd = range.start;
-                console.log({ st, blockSize });
-                ctx.fillRect(left, curr + top, innerWidth, blockSize);
+                const prevPixel = y.getPixelForValue(prevEnd);
+                const start = Math.max(range.start, min);
+                const currPixel = y.getPixelForValue(start);
+                const blockSize = Math.max(0, currPixel - prevPixel);
+                console.log({ blockSize, currPixel, prevPixel, prevEnd, min, max });
+                ctx.fillRect(left, prevPixel, innerWidth, blockSize);
+                prevEnd = start;
             }
             else {
                 if (i < bgRange.ranges.length - 1)
