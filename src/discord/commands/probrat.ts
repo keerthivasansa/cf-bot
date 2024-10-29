@@ -4,6 +4,7 @@ import { ClistsApi } from "$src/clists/client";
 import { db } from "$db/index";
 import CliTable3 from "cli-table3";
 import { CFApiFactory } from "$src/codeforces/client";
+import { formatRating } from "$src/lib/utils";
 
 export const probRatCmd: Command = {
     info: new SlashCommandBuilder()
@@ -62,6 +63,7 @@ export const probRatCmd: Command = {
         }
         console.log(cachedProb);
 
+        const predictedRatingWidth = 15;
         let table = new CliTable3({
             head: ['#', 'Actual', 'Predicted'],
             style: {
@@ -73,7 +75,7 @@ export const probRatCmd: Command = {
         });
 
         for (const prob of cachedProb)
-            table.push([prob.index, prob.official_rating || '-', prob.predicted_rating || '-']);
+            table.push([prob.index, prob.official_rating || '-', formatRating(prob.predicted_rating, predictedRatingWidth) || '-']);
 
         const tableMsg = table.toString();
 
