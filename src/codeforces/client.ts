@@ -1,6 +1,6 @@
 import { QueuedTasker } from "$src/common/queue";
 import axios from "axios";
-import { setupCache } from 'axios-cache-interceptor/dev';
+import { setupCache } from 'axios-cache-interceptor';
 
 class CodeforcesApi {
     private readonly INTERVAL = 150; // 2_000;

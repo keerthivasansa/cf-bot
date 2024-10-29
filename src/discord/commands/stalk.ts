@@ -86,7 +86,7 @@ export const stalkCmd: Command = {
             const end = Math.min(start + chunkSize, filteredSubmissions.length);
 
             const nameWidth = 19;
-            const ratingWidth = 11;
+            const ratingWidth = 20;
             const submissionTimeWidth = 19;
             const table = new CliTable3({
                 head: ['Problem Name', 'Rating', 'Submission Time'],
@@ -102,7 +102,7 @@ export const stalkCmd: Command = {
                 const problem = filteredSubmissions[i].problem;
 
                 const rating = problem.rating ? formatRating(problem.rating, ratingWidth) : '?';
-                
+
                 const name = wrapText(problem.name, nameWidth);
 
                 const timeAgo = (timeInS: number): string => {
@@ -141,8 +141,7 @@ export const stalkCmd: Command = {
             components: [row],
         });
 
-        const filter = (i: any) => i.user.id === msg.user.id;
-        const collector = msg.channel.createMessageComponentCollector({ filter, time: collectorTime });
+        const collector = msg.channel.createMessageComponentCollector({ filter: (i => i.user.id === msg.user.id), time: collectorTime });
 
         collector.on('collect', async (interaction) => {
             if (interaction.customId === 'prev') {
