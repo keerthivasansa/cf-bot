@@ -165,5 +165,6 @@ interface ProblemResult {
 
 type CfResult<T> = {
     status: 'OK' | 'FAILED';
-    result: T
+    result: T;
+    comment?: string;
 }  

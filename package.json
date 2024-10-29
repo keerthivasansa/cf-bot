@@ -15,7 +15,9 @@
   "dependencies": {
     "@napi-rs/canvas": "^0.1.56",
     "@resvg/resvg-js": "^2.6.2",
+    "@tictactrip/axios-redis": "^4.0.0",
     "axios": "^1.7.7",
+    "axios-cache-interceptor": "^1.6.2",
     "chart.js": "^4.4.4",
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-annotation": "^3.0.1",

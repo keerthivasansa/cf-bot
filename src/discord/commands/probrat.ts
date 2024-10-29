@@ -3,6 +3,7 @@ import { Command } from "../type";
 import { ClistsApi } from "$src/clists/client";
 import { db } from "$db/index";
 import CliTable3 from "cli-table3";
+import { CFApiFactory } from "$src/codeforces/client";
 
 export const probRatCmd: Command = {
     info: new SlashCommandBuilder()
@@ -16,19 +17,24 @@ export const probRatCmd: Command = {
 
     async execute(msg) {
         const api = new ClistsApi();
+        const cfApi = CFApiFactory.get();
 
-        const contestId = msg.options.getNumber('contest_id');
+        const contestId = msg.options.getNumber('contest_id', true);
+        const contestInfo = await cfApi.getContestInfo(contestId);
 
         const cachedProb = await db.selectFrom('problems').selectAll().where('contestId', '=', contestId).orderBy('index asc').execute();
 
-        if (cachedProb.length < 1 || !cachedProb[0].predicted_rating) {
+        if (cachedProb.length < 1)
+            return msg.reply('Contest doesn\'t exist or hasn\'t finished yet!');
+
+        if (!cachedProb[0].predicted_rating) {
             const resp = await api.getContestRatings(contestId);
             const problems = resp.objects;
+            // clist weird behaviour if it hasnt predicted yet
             const hasPrediction = problems.some((prob) => prob.rating !== 800)
 
             if (hasPrediction)
                 await db.transaction().execute(async (tdb) => {
-                    // clist weird behaviour if it hasnt predicted yet
                     for (const p of problems) {
                         const rating = Math.round(p.rating / 100) * 100;
                         const probRating = Math.max(800, rating);
@@ -40,7 +46,6 @@ export const probRatCmd: Command = {
                                 console.log(index, probRating);
                             }
                         }
-
                         // cache for later use.
                         await tdb.updateTable("problems").set({
                             predicted_rating: probRating
@@ -60,11 +65,11 @@ export const probRatCmd: Command = {
         let table = new CliTable3({
             head: ['#', 'Actual', 'Predicted'],
             style: {
-                head: [], //disable colors in header cells
-                border: [], //disable colors for the border
+                head: [],
+                border: [],
             },
             colAligns: ['center', 'center', 'center'],
-            colWidths: [4, 8, 8], //set the widths of each column (optional)
+            colWidths: [5, 10, 15],
         });
 
         for (const prob of cachedProb)
@@ -73,7 +78,7 @@ export const probRatCmd: Command = {
         const tableMsg = table.toString();
 
         await msg.reply({
-            content: `\`\`\`Contest ${contestId} Ratings\n\n${tableMsg}\`\`\``
+            content: `\`\`\`${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``
         });
     },
 }

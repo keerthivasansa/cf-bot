@@ -1,8 +1,10 @@
 import { QueuedTasker } from "$src/common/queue";
 import axios from "axios";
+import { setupCache } from 'axios-cache-interceptor/dev';
 
 class CodeforcesApi {
     private readonly INTERVAL = 150; // 2_000;
+    private readonly DEFAULT_CACHE_EXPIRY = 36000 // 10 minutes
     private baseUrl = 'https://codeforces.com/api/';
     private client: Axios.AxiosInstance;
     private tasker: QueuedTasker;
@@ -10,8 +12,9 @@ class CodeforcesApi {
     constructor() {
         this.tasker = new QueuedTasker(this.INTERVAL);
         this.client = axios.create({
-            baseURL: this.baseUrl
+            baseURL: this.baseUrl,
         });
+        setupCache(this.client);
     }
 
     async getUserSubmissions(handle: string, count: number = 5) {
@@ -119,8 +122,21 @@ class CodeforcesApi {
             throw new Error(data.comment || 'Error fetching contest standings');
         return data.result;
     }
-    
-    
+
+    async getContestInfo(contestId: number) {
+        await this.tasker.waitForRelease();
+        const resp = await this.client.get('contest.standings', {
+            params: {
+                contestId,
+                count: 1
+            }
+        });
+        console.log({ cached: resp.cached });
+        const data = resp.data as CfResult<{ contest: Contest, problems: Problem[] }>;
+        if (data.status != 'OK')
+            throw new Error(data.comment || 'Error fetching contest standings');
+        return data.result.contest;
+    }
 }
 
 export type CFApi = CodeforcesApi;
