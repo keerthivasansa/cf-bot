@@ -15,12 +15,19 @@ export const stalkCmd: Command = {
             .setDescription("Sort as per rating"))
         .addBooleanOption(option => option
             .setName("contest")
-            .setDescription("Show only contest problems")),
-    
+            .setDescription("Show only contest problems"))
+        .addUserOption(option => option
+            .setName('user')
+            .setDescription('Mention the user to stalk them instead')
+        ),
+
     async execute(msg) {
         await msg.deferReply(); // defer reply to avoid timeout
 
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
+        const mention = msg.options.getUser('user');
+        const selectedUser = mention ? mention : msg.user;
+
+        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
         if (!user)
             return msg.editReply("User has not registered their Codeforces handle!");
 
@@ -55,7 +62,7 @@ export const stalkCmd: Command = {
         const processedProblems = new Set<string>();
         const filteredSubmissions = allUserSubmissions.filter((submission) => {
             if (submission.relativeTimeSeconds === INT_MAX && onlyContest) return false;
-            
+
             if (submission.verdict === 'OK' && !processedProblems.has(submission.problem.name)) {
                 processedProblems.add(submission.problem.name);
 
@@ -85,22 +92,22 @@ export const stalkCmd: Command = {
 
         const getEmojiForRating = (rating: number): string => {
             if (rating < 1200) return "🔘";
-            if (rating < 1400) return "🟢";    
-            if (rating < 1600) return "🩵";    
-            if (rating < 1900) return "🔵";    
-            if (rating < 2100) return "🟣";    
-            if (rating < 2300) return "🟡";   
-            if (rating < 2400) return "🟠";   
-            if (rating < 2600) return "🔴";    
-            if (rating < 3000) return "🔥";    
-            if (rating < 3500) return "✨";    
+            if (rating < 1400) return "🟢";
+            if (rating < 1600) return "🩵";
+            if (rating < 1900) return "🔵";
+            if (rating < 2100) return "🟣";
+            if (rating < 2300) return "🟡";
+            if (rating < 2400) return "🟠";
+            if (rating < 2600) return "🔴";
+            if (rating < 3000) return "🔥";
+            if (rating < 3500) return "✨";
             return "👑";
         };
 
         const formatRating = (rating: number): string => {
             const emoji = getEmojiForRating(rating);
             const ratingString = rating.toString();
-        
+
             return `${emoji} ${ratingString}`;
         };
 

@@ -14,10 +14,17 @@ export const perfCmd: Command = {
         .setDescription("Fetch a user's performance graph")
         .addBooleanOption(option => option
             .setName("full")
-            .setDescription("Show entire performance history")),
+            .setDescription("Show entire performance history"))
+        .addUserOption(option => option
+            .setName('user')
+            .setDescription('Mention a user to get their speed')
+        ),
 
     async execute(msg) {
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
+        const mention = msg.options.getUser('user');
+        const selectedUser = mention ? mention : msg.user;
+
+        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
         const showEntire = msg.options.getBoolean('full');
 
         if (!user)

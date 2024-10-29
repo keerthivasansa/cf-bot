@@ -4,7 +4,6 @@ import { db } from "$db/index";
 import { CFApiFactory } from "$src/codeforces/client";
 import { CFLineChart } from "$src/graphs/line";
 import { EmbedBuilder } from "@discordjs/builders";
-import { type } from "os";
 
 const INT_MAX = 2147483647;
 
@@ -15,11 +14,17 @@ export const speedCmd: Command = {
         .addIntegerOption(option => option
             .setName("count")
             .setDescription("Number of contests to fetch the speed for")
-            .setMinValue(5)),
-    
+            .setMinValue(5))
+        .addUserOption(option => option
+            .setName('user')
+            .setDescription('Mention the user you want to check the speed of')
+        ),
+
     async execute(msg) {
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
-        const showEntire = msg.options.getBoolean('full');
+        const mention = msg.options.getUser('user');
+        const selectedUser = mention ? mention : msg.user;
+
+        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
 
         if (!user)
             return msg.reply("User has not registered their codeforces handle!")
@@ -40,7 +45,7 @@ export const speedCmd: Command = {
 
         // console.log(allUserSubmissions.length);
 
-        const selectedData: Map<number, {totalTime: number, totalCount: number}> = new Map();
+        const selectedData: Map<number, { totalTime: number, totalCount: number }> = new Map();
         let totalContests = msg.options.getInteger("count") === null ? INT_MAX : msg.options.getInteger("count");
         let prevContestID = -1;
         let prevRelativeTime = -1;
@@ -62,7 +67,7 @@ export const speedCmd: Command = {
 
             const relativeTimeInMinutes = (relativeTimeInSeconds - prevRelativeTime) / 60;
             if (!selectedData.has(problem.rating)) {
-                selectedData.set(problem.rating, {totalTime: 0, totalCount: 0});
+                selectedData.set(problem.rating, { totalTime: 0, totalCount: 0 });
             }
             const currentValue = selectedData.get(problem.rating)!;
             currentValue.totalTime += relativeTimeInMinutes;

@@ -7,20 +7,29 @@ import { sql } from "kysely";
 export const infoCmd: Command = {
     info: new SlashCommandBuilder()
         .setName("info")
-        .setDescription("Get your current registered handle"),
+        .setDescription("Get your current registered handle")
+        .addUserOption(option => option
+            .setName('user')
+            .setDescription('Mention a user to get their info')
+        ),
 
     async execute(msg) {
+        const mention = msg.options.getUser('user');
+        const selectedUser = mention ? mention : msg.user;
+
         const user = await db.selectFrom('users').select([
             'handle',
             'rating',
             'score',
         ])
-            .where('discordId', '=', msg.user.id).executeTakeFirst();
+            .where('discordId', '=', selectedUser.id).executeTakeFirst();
 
         if (!user) {
             msg.reply('You have not registered your handle yet!');
             return;
         }
+
+        // TODO pretty inefficient
         const ranks = await db.selectFrom('users').select([
             sql<number>`ROW_NUMBER() OVER (ORDER BY rating desc)`.as('rank'),
             'discordId'
@@ -28,7 +37,7 @@ export const infoCmd: Command = {
 
         let usrRank = -1;
         for (let usr of ranks) {
-            if (usr.discordId == msg.user.id) {
+            if (usr.discordId == selectedUser.id) {
                 usrRank = usr.rank;
                 break;
             }

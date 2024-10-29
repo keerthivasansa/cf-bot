@@ -16,10 +16,17 @@ export const percentileCmd: Command = {
                     { name: 'max', value: 'max' },
                     { name: 'current', value: 'current' },
                 ])
+        )
+        .addUserOption(option => option
+            .setName('user')
+            .setDescription('Mention a user to get their percentile')
         ),
 
     async execute(msg) {
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
+        const mention = msg.options.getUser('user');
+        const selectedUser = mention ? mention : msg.user;
+
+        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
         const type = (msg.options.getString('type') as PercentileType) || 'max';
 
         if (!user)
