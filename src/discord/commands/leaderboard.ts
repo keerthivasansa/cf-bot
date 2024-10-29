@@ -3,6 +3,10 @@ import { Command } from "../type";
 import { db } from "$db/index";
 import CliTable3 from "cli-table3";
 import { DiscordClient } from "../client";
+import { getNavButtons } from "$src/lib/discordUtils";
+import { formatRating } from "$src/lib/utils";
+
+const collectorTime = 60000 * 3;
 
 export const leaderboardCmd: Command = {
     info: new SlashCommandBuilder()
@@ -23,6 +27,11 @@ export const leaderboardCmd: Command = {
         const createSubmissionTable = async (page: number): Promise<string> => {
             const start = page * chunkSize;
             const end = Math.min(start + chunkSize, users.length);
+
+            const indexWidth = 5;
+            const userWidth = 19;
+            const handleWidth = 19;
+            const ratingWidth = 11;
         
             const table = new CliTable3({
                 head: ['#', 'User', 'Handle', 'Rating'],
@@ -31,13 +40,13 @@ export const leaderboardCmd: Command = {
                     border: [],
                 },
                 colAligns: ['center', 'center', 'center', 'center'],
-                colWidths: [5, 19, 19, 8]
+                colWidths: [indexWidth, userWidth, handleWidth, ratingWidth]
             });
         
             for (let i = start; i < end; i++) {
                 const usr = users[i];
                 const member = await discord.users.fetch(usr.discordId);
-                table.push([(i + 1).toString(), member.displayName, usr.handle, usr.rating]);
+                table.push([(i + 1).toString(), member.displayName, usr.handle, formatRating(usr.rating, ratingWidth)]);
             }
         
             return table.toString();
@@ -46,19 +55,7 @@ export const leaderboardCmd: Command = {
         let currentPage = 0;
         const tableMsg = await createSubmissionTable(currentPage);
 
-        const row = new ActionRowBuilder<ButtonBuilder>()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('prev')
-                    .setLabel('Previous')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(currentPage === 0),
-                new ButtonBuilder()
-                    .setCustomId('next')
-                    .setLabel('Next')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(currentPage === totalPages - 1),
-            );
+        const row = getNavButtons(currentPage, totalPages);
 
         await msg.editReply({
             content: `\`\`\`Leaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
@@ -66,7 +63,7 @@ export const leaderboardCmd: Command = {
         });
 
         const filter = (i: any) => i.user.id === msg.user.id;
-        const collector = msg.channel.createMessageComponentCollector({ filter, time: 60000 });
+        const collector = msg.channel.createMessageComponentCollector({ filter, time: collectorTime });
 
         collector.on('collect', async (interaction) => {
             if (interaction.customId === 'prev') {
@@ -77,19 +74,7 @@ export const leaderboardCmd: Command = {
 
             const updatedTableMsg = await createSubmissionTable(currentPage);
 
-            const updatedRow = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('prev')
-                        .setLabel('Previous')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(currentPage === 0),
-                    new ButtonBuilder()
-                        .setCustomId('next')
-                        .setLabel('Next')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(currentPage === totalPages - 1),
-                );
+            const updatedRow = getNavButtons(currentPage,  totalPages);
 
             await interaction.update({
                 content: `\`\`\`Leaderboard - Page ${currentPage}\n\n${updatedTableMsg}\`\`\``,

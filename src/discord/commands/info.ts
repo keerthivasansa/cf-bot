@@ -43,13 +43,14 @@ export const infoCmd: Command = {
             }
         };
 
+        const dataWidth = 25;
         const table = new CliTable3({
             style: {
                 head: [],
                 border: [],
             },
             colAligns: ['center', 'center'],
-            colWidths: [8, 25],
+            colWidths: [8, dataWidth],
         });
 
         table.push(
@@ -59,6 +60,6 @@ export const infoCmd: Command = {
             ['Rank', `#${usrRank}`]
         );
 
-        return msg.reply(`\`\`\`js\n${table.toString()}\`\`\``);
+        return msg.reply(`\`\`\`\n${table.toString()}\`\`\``);
     },
 };
