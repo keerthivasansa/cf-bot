@@ -137,7 +137,7 @@ export const stalkCmd: Command = {
         const row = getNavButtons(currentPage, totalPages);
 
         await msg.editReply({
-            content: `\`\`\`User ${user.handle} Submissions\n\n${tableMsg}\`\`\``,
+            content: `\`\`\`ansi\nUser ${user.handle} Submissions\n\n${tableMsg}\`\`\``,
             components: [row],
         });
 
@@ -156,7 +156,7 @@ export const stalkCmd: Command = {
             const updatedRow = getNavButtons(currentPage, totalPages);
 
             await interaction.update({
-                content: `\`\`\`User ${user.handle} Submissions\n\n${updatedTableMsg}\`\`\``,
+                content: `\`\`\`ansi\nUser ${user.handle} Submissions\n\n${updatedTableMsg}\`\`\``,
                 components: [updatedRow],
             });
         });
