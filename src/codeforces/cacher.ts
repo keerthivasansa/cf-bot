@@ -2,7 +2,8 @@ import { db } from "$db/index";
 import { InsertResult, UpdateResult } from "kysely";
 import { CFApi, CFApiFactory } from "./client";
 import { UserProcesser } from "$src/discord/user";
-
+import { alertNewLevel } from "$src/discord/alert";
+import { DiscordClient } from "$src/discord/client";
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
@@ -121,6 +122,14 @@ export class CFCacher {
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
                 console.log(handle, oldRating, usr.rating);
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
+
+                if (oldRating !== usr.rating) {
+                    const alertMessage = alertNewLevel(usr.rating, usr.maxRating);
+                    if (alertMessage) {
+                        const channel =  DiscordClient.getChannel('channel-id-goes-here');
+                        channel.send(alertMessage);
+                    }
+                }
 
                 promises.push(
                     tdb.updateTable('users')

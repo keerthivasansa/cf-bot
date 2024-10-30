@@ -32,4 +32,9 @@ export class DiscordClient {
         this.guild = await this.client.guilds.fetch(this.GUILD_ID);
         return this.guild;
     }
+
+    static async getChannel(channelId: string): Promise<TextChannel> {
+        const guild = await this.getGuild();
+        return guild.channels.cache.get(channelId) as TextChannel;
+    }
 }
