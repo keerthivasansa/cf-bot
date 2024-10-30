@@ -24,8 +24,6 @@ export const infoCmd: Command = {
         ])
             .where('discordId', '=', selectedUser.id).executeTakeFirst();
 
-        await new Promise((res, rej) => setTimeout(res, 3000));
-
         if (!user)
             return interaction.reply('You have not registered your handle yet!');
 
@@ -42,8 +40,6 @@ export const infoCmd: Command = {
                 break;
             }
         };
-
-        throw new Error("just testing if error gets sent");
 
         const dataWidth = 25;
         const table = new CliTable3({
