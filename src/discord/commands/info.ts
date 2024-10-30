@@ -60,6 +60,6 @@ export const infoCmd: Command = {
             ['Rank', `#${usrRank}`]
         );
 
-        return msg.reply(`\`\`\`\n${table.toString()}\`\`\``);
+        return msg.reply(`\`\`\`ansi\n${table.toString()}\`\`\``);
     },
 };

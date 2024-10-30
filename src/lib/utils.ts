@@ -20,18 +20,19 @@ export const wrapText = (text: string, maxWidth: number): string => {
     return result;
 };
 
+// ANSI color codes updated for better brightness and visibility
 const colorCodes = {
-    newbie: "\u001b[90m", // Gray
-    pupil: "\u001b[32m", // Green
-    specialist: "\u001b[36m", // Cyan
-    expert: "\u001b[34m", // Blue
-    candidateMaster: "\u001b[35m", // Purple
-    master: "\u001b[33m", // Orange (Yellow works as an approximation)
-    internationalMaster: "\u001b[93m", // Bright Yellow
-    grandmaster: "\u001b[31m", // Red
-    internationalGrandmaster: "\u001b[91m", // Bright Red
-    legendaryGrandmaster: "\u001b[91m", // Bright Red (same for highest ranks)
-    reset: "\u001b[0m" // Reset color
+    newbie: '\x1b[30m',               // Gray
+    pupil: '\x1b[32m',                // Green
+    specialist: '\x1b[36m',           // Cyan
+    expert: '\x1b[34m',               // Blue
+    candidateMaster: '\x1b[35m',      // Magenta
+    master: '\x1b[33m',               // Yellow
+    internationalMaster: '\x1b[33m',  // Yellow
+    grandmaster: '\x1b[31m',          // Red
+    internationalGrandmaster: '\x1b[31m', // Red
+    legendaryGrandmaster: '\x1b[37m', // White for high contrast
+    reset: '\x1b[0m'                  // Reset color
 };
 
 export const formatRating = (rating: number, maxWidth: number): string => {

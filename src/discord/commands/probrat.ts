@@ -80,7 +80,7 @@ export const probRatCmd: Command = {
         const tableMsg = table.toString();
 
         await msg.reply({
-            content: `\`\`\`${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``
+            content: `\`\`\`ansi\n${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``
         });
     },
 }
