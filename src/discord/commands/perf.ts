@@ -38,25 +38,25 @@ export const perfCmd: Command = {
         if (allRatings.length === 0)
             return msg.reply("You have not participated in any contests yet!");
 
-        msg.deferReply();
+        await msg.deferReply();
 
         const last10Index = Math.max(0, allRatings.length - 10);
 
         const getRatingWithRank = async (contestId: number, rank: number) => {
             const perf = await cfApi.getContestRatingChanges(contestId);
-            const k = 20;
+            const k = 15;
             const C = 75;
 
             let sum = 0;
             let count = 0;
 
             for (let j = 1; j <= k; j++) {
-                if (rank - j >= 0) {
+                if (rank - j >= 0 && perf[rank - j].oldRating) {
                     sum += perf[rank - j].oldRating;
                     count++;
                 }
 
-                if (rank + j < perf.length) {
+                if (rank + j < perf.length && perf[rank + j].oldRating) {
                     sum += perf[rank + j].oldRating;
                     count++;
                 }
@@ -69,16 +69,27 @@ export const perfCmd: Command = {
 
         if (showEntire || last10Index < 5) {
             const st = showEntire ? 0 : last10Index;
+            const result: Map<number, number> = new Map();
+
+            const promises = allRatings.slice(st, 5).map(async (s, index) => {
+                const rank = await getRatingWithRank(s.contestId, s.rank);
+                result.set(index, rank);
+            });
+
+            console.time("initial perf rating")
+            await Promise.all(promises);
+            console.timeEnd("initial perf rating")
+
             for (let i = st; i < 5; i++) {
                 const s = allRatings[i];
-                const rank = await getRatingWithRank(s.contestId, s.rank);
                 const d = new Date(s.ratingUpdateTimeSeconds * 1000);
+                const rank = result.get(i);
                 perfRatingMap.set(d, rank);
             }
         }
 
         let currRating = 0;
-        for (let i = Math.max(5, last10Index); i < allRatings.length; i++) {
+        for (let i = showEntire ? 5 : Math.max(5, last10Index); i < allRatings.length; i++) {
             const s = allRatings[i];
             const d = new Date(s.ratingUpdateTimeSeconds * 1000);
             const perfRating = s.oldRating + (s.newRating - s.oldRating) * MULTIPLY_FACTOR;
