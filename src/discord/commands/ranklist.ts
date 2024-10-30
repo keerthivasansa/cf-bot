@@ -1,11 +1,11 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../type";
 import { db } from "$db/index";
 import { CFApiFactory } from "src/codeforces/client";
 import CliTable3 from "cli-table3";
 import { getNavButtons } from "$src/lib/discordUtils";
 
-const collectorTime = 60000 * 3; // 3 minutes
+const collectorTime = 60000 * 3; // 3 min
 
 export const ranklistCmd: Command = {
     info: new SlashCommandBuilder()
@@ -20,7 +20,7 @@ export const ranklistCmd: Command = {
     async execute(msg) {
         await msg.deferReply();
 
-        const contestId = msg.options.getInteger("contest");
+        const contestId = msg.options.getInteger("contest"); 
 
         // Fetch user handles from the database
         const userHandles = new Set<string>();
@@ -76,7 +76,7 @@ export const ranklistCmd: Command = {
                 if (messageContent.length <= 2000) {
                     break;
                 } else {
-                    chunkSize--; // Reduce chunkSize if message is too long
+                    chunkSize--; 
                 }
             }
 
@@ -90,13 +90,8 @@ export const ranklistCmd: Command = {
 
             const row = getNavButtons(currentPage, totalPages);
 
-            const embed = new EmbedBuilder()
-                .setTitle(`Ranklist for Contest ${contestId}`)
-                .setDescription(`Page ${currentPage + 1}/${totalPages}\n\n${tableMsg}`)
-                .setColor('#0099ff');
-
             await msg.editReply({
-                embeds: [embed],
+                content: `\`\`\`${messageContent}\`\`\``,
                 components: [row],
             });
 
@@ -115,13 +110,8 @@ export const ranklistCmd: Command = {
 
                 const updatedRow = getNavButtons(currentPage, totalPages);
 
-                const updatedEmbed = new EmbedBuilder()
-                    .setTitle(`Ranklist for Contest ${contestId}`)
-                    .addFields([{ name:' ', value: `Page ${currentPage + 1}/${totalPages}\n\n\`\`\`${tableMsg}\`\`\``}])
-                    .setColor('#0099ff');
-
                 await interaction.update({
-                    embeds: [updatedEmbed],
+                    content: `\`\`\`${messageContent}\`\`\``,
                     components: [updatedRow],
                 });
             });
