@@ -20,7 +20,7 @@ export const ranklistCmd: Command = {
     async execute(msg) {
         await msg.deferReply();
 
-        const contestId = msg.options.getInteger("contest"); 
+        const contestId = msg.options.getInteger("contest");
 
         // Fetch user handles from the database
         const userHandles = new Set<string>();
@@ -35,14 +35,14 @@ export const ranklistCmd: Command = {
 
         try {
             // Use the cfapi method
-            const { rows: standings, problems } = await CFApiFactory.get().getContestStandings(contestId, handlesParam);
+            const cfApi = CFApiFactory.get()
+            const { rows: standings, problems } = await cfApi.getContestStandings(contestId, handlesParam);
 
             // Filter the API response based on the user handles and participant type
             const ranklist: any[] = [];
-            standings.forEach((row: any) => {
+            standings.forEach((row) => {
                 const handle = row.party.members[0].handle.trim().toLowerCase();
                 const participantType = row.party.participantType;
-
                 if (userHandles.has(handle) && participantType === 'CONTESTANT') {
                     const rank = row.rank;
                     const problemResults = row.problemResults.map((result: any) => [
@@ -58,6 +58,8 @@ export const ranklistCmd: Command = {
                 }
             });
 
+            const contestInfo = await cfApi.getContestInfo(contestId);
+
             // Pagination setup
             let chunkSize = 10; // Start with 10 entries per page
             let totalPages = Math.ceil(ranklist.length / chunkSize);
@@ -71,12 +73,12 @@ export const ranklistCmd: Command = {
                 currentPage = Math.min(currentPage, totalPages - 1);
 
                 tableMsg = createRanklistTable(currentPage, chunkSize, ranklist, problems);
-                messageContent = `Ranklist for Contest ${contestId} - Page ${currentPage + 1}/${totalPages}\n\n${tableMsg}`;
-
+                messageContent = `Ranklist for ${contestInfo.name} - Page ${currentPage + 1}/${totalPages}\n\n${tableMsg}`;
+                console.log(messageContent.length, chunkSize);
                 if (messageContent.length <= 2000) {
                     break;
                 } else {
-                    chunkSize--; 
+                    chunkSize--;
                 }
             }
 
@@ -148,7 +150,7 @@ function createRanklistTable(page: number, chunkSize: number, ranklist: any[], p
         style: {
             head: [],
             border: [],
-            compact: true, 
+            compact: true,
             "padding-left": 0,
             "padding-right": 0,
         },
