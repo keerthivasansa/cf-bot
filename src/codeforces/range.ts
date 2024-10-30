@@ -14,13 +14,16 @@ export const CF_RATING_RANGE = [
 ]
 
 export function getRatingColor(value: number) {
-    let color = 0;
+    const hex = getRatingColorHex(value);
+    return parseInt(hex.slice(1), 16)
+}
 
+export function getRatingColorHex(value: number) {
+    let color = "";
     for (let i = 0; i < CF_RATING_RANGE.length; i++) {
         if (CF_RATING_RANGE[i].start > value)
             break;
-        color = parseInt(CF_RATING_RANGE[i].color.slice(1), 16);
+        color = CF_RATING_RANGE[i].color;
     }
-
     return color;
 }
