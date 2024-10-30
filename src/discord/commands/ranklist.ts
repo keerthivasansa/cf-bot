@@ -79,7 +79,7 @@ export const ranklistCmd: Command = {
             table.push(...tableData.map(row => Object.values(row)));
 
             // Send the table as a reply
-            msg.reply(`\`\`\`js\n${table.toString()}\`\`\``);
+            msg.reply(`\`\`\`ansi\n${table.toString()}\`\`\``);
 
         } 
         catch (error) {

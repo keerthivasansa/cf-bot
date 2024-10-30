@@ -79,8 +79,6 @@ export const probRatCmd: Command = {
 
         const tableMsg = table.toString();
 
-        await interaction.reply({
-            content: `\`\`\`${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``
-        });
+        await interaction.reply(`\`\`\`ansi${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``);
     },
 }
