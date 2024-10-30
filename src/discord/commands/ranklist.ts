@@ -1,20 +1,25 @@
-import { SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 import { Command } from "../type";
 import { db } from "$db/index";
-import { CFApiFactory } from "src/codeforces/client"; // Import CFApiFactory
+import { CFApiFactory } from "src/codeforces/client";
 import CliTable3 from "cli-table3";
+import { getNavButtons } from "$src/lib/discordUtils";
+
+const collectorTime = 60000 * 3; // 3 minutes
 
 export const ranklistCmd: Command = {
     info: new SlashCommandBuilder()
         .setName("ranklist")
         .setDescription("Get the ranklist for a specific contest")
-        .addIntegerOption(option => 
+        .addIntegerOption(option =>
             option.setName("contest")
                 .setDescription("The contest number")
                 .setRequired(true)
         ),
 
     async execute(msg) {
+        await msg.deferReply();
+
         const contestId = msg.options.getInteger("contest");
 
         // Fetch user handles from the database
@@ -26,6 +31,7 @@ export const ranklistCmd: Command = {
 
         // Convert the set of user handles to a semicolon-separated string
         const handlesParam = Array.from(userHandles).join(';');
+        console.log('Handles Param:', handlesParam);
 
         try {
             // Use the cfapi method
@@ -52,49 +58,124 @@ export const ranklistCmd: Command = {
                 }
             });
 
-            // Prepare data for tabulate
-            const headers = ["Rank", "Handle", ...problems.map((_, index) => String.fromCharCode(65 + index))];
-            const tableData = ranklist.map(entry => {
-                const rowData: any = { Rank: entry.rank, Handle: entry.handle };
-                entry.problemResults.forEach((result, index) => {
-                    const formattedTime = formatTime(result[1]);
-                    rowData[String.fromCharCode(65 + index)] = result[1] ? `${result[0]}\n(${formattedTime})` : `${result[0]}`;
+            // Pagination setup
+            let chunkSize = 10; // Start with 10 entries per page
+            let totalPages = Math.ceil(ranklist.length / chunkSize);
+            let currentPage = 0;
+            let tableMsg = '';
+            let messageContent = '';
+
+            // Dynamically adjust chunkSize
+            while (chunkSize > 0) {
+                totalPages = Math.ceil(ranklist.length / chunkSize);
+                currentPage = Math.min(currentPage, totalPages - 1);
+
+                tableMsg = createRanklistTable(currentPage, chunkSize, ranklist, problems);
+                messageContent = `Ranklist for Contest ${contestId} - Page ${currentPage + 1}/${totalPages}\n\n${tableMsg}`;
+
+                if (messageContent.length <= 2000) {
+                    break;
+                } else {
+                    chunkSize--; // Reduce chunkSize if message is too long
+                }
+            }
+
+            if (chunkSize === 0) {
+                await msg.editReply({
+                    content: `Cannot display ranklist. The data is too large to display.`,
+                    components: [],
                 });
-                return rowData;
+                return;
+            }
+
+            const row = getNavButtons(currentPage, totalPages);
+
+            const embed = new EmbedBuilder()
+                .setTitle(`Ranklist for Contest ${contestId}`)
+                .setDescription(`Page ${currentPage + 1}/${totalPages}\n\n${tableMsg}`)
+                .setColor('#0099ff');
+
+            await msg.editReply({
+                embeds: [embed],
+                components: [row],
             });
 
-            // Create the table
-            const table = new CliTable3({
-                head: headers,
-                colAligns: ['center', 'center', ...new Array(problems.length).fill('center')],
-                style: {
-                    head: [], //disable colors in header cells
-                    border: [], //disable colors for the border
-                    'padding-left': 0,
-                    'padding-right': 0,
-                },
+            const filter = (i: any) => i.user.id === msg.user.id;
+            const collector = msg.channel.createMessageComponentCollector({ filter, time: collectorTime });
+
+            collector.on('collect', async (interaction) => {
+                if (interaction.customId === 'prev') {
+                    currentPage = Math.max(currentPage - 1, 0);
+                } else if (interaction.customId === 'next') {
+                    currentPage = Math.min(currentPage + 1, totalPages - 1);
+                }
+
+                tableMsg = createRanklistTable(currentPage, chunkSize, ranklist, problems);
+                messageContent = `Ranklist for Contest ${contestId} - Page ${currentPage + 1}/${totalPages}\n\n${tableMsg}`;
+
+                const updatedRow = getNavButtons(currentPage, totalPages);
+
+                const updatedEmbed = new EmbedBuilder()
+                    .setTitle(`Ranklist for Contest ${contestId}`)
+                    .addFields([{ name:' ', value: `Page ${currentPage + 1}/${totalPages}\n\n\`\`\`${tableMsg}\`\`\``}])
+                    .setColor('#0099ff');
+
+                await interaction.update({
+                    embeds: [updatedEmbed],
+                    components: [updatedRow],
+                });
             });
-            
-            // @ts-ignore
-            table.push(...tableData.map(row => Object.values(row)));
 
-            // Send the table as a reply
-            msg.reply(`\`\`\`js\n${table.toString()}\`\`\``);
+            collector.on('end', async () => {
+                await msg.editReply({ components: [] });
+            });
 
-        } 
+        }
         catch (error) {
+            console.error('API Error:', error);
+
             if (error && error.response && error.response.data && error.response.data.comment) {
-                msg.reply(removeExtra(`${error.response.data.comment}`));
-            } 
-            // else if (error && error.message) {
-            //     msg.reply(`Error fetching contest standings: ${error.message}`);
-            // } 
+                await msg.editReply({ content: removeExtra(`${error.response.data.comment}`), components: [] });
+            }
             else {
-                msg.reply("Error fetching data from API");
+                await msg.editReply({ content: "Error fetching data from API", components: [] });
             }
         }
     },
 };
+
+// Create ranklist table function
+function createRanklistTable(page: number, chunkSize: number, ranklist: any[], problems: any[]): string {
+    const start = page * chunkSize;
+    const end = Math.min(start + chunkSize, ranklist.length);
+    const pageData = ranklist.slice(start, end);
+
+    // Prepare data for table
+    const headers = ["Rank", "Handle", ...problems.map((_, index) => String.fromCharCode(65 + index))];
+    const table = new CliTable3({
+        head: headers,
+        colAligns: ['center', 'center', ...new Array(problems.length).fill('center')],
+        style: {
+            head: [],
+            border: [],
+            compact: true, 
+            "padding-left": 0,
+            "padding-right": 0,
+        },
+    });
+
+    pageData.forEach(entry => {
+        const rowData: any = [entry.rank, entry.handle];
+        entry.problemResults.forEach((result: any) => {
+            const formattedTime = formatTime(result[1]);
+            const cellContent = result[1] ? `${result[0]}(${formattedTime})` : `${result[0]}`;
+            rowData.push(cellContent);
+        });
+        table.push(rowData);
+    });
+
+    return table.toString();
+}
 
 // Format time
 function formatTime(seconds: number | string): string {
@@ -112,10 +193,11 @@ function formatTime(seconds: number | string): string {
     }
 }
 
+// Remove extra text from error messages
 function removeExtra(input: string): string {
     const colonIndex = input.indexOf(':');
     if (colonIndex === -1) {
-        return input; 
+        return input;
     }
     return input.substring(colonIndex + 1).trim();
 }
