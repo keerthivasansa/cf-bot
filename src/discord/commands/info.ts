@@ -3,6 +3,7 @@ import { Command } from "../type";
 import { db } from "$db/index";
 import CliTable3 from "cli-table3";
 import { sql } from "kysely";
+import { formatRating } from "$src/lib/utils";
 
 export const infoCmd: Command = {
     info: new SlashCommandBuilder()
@@ -55,7 +56,7 @@ export const infoCmd: Command = {
 
         table.push(
             ['Handle', user.handle],
-            ['Rating', user.rating],
+            ['Rating', formatRating(user.rating, dataWidth)],
             ['Score', user.score],
             ['Rank', `#${usrRank}`]
         );
