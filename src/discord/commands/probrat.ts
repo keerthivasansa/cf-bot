@@ -16,7 +16,7 @@ export const probRatCmd: Command = {
                 .setRequired(true)
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const api = new ClistsApi();
         const cfApi = CFApiFactory.get();
 
@@ -26,7 +26,7 @@ export const probRatCmd: Command = {
         const cachedProb = await db.selectFrom('problems').selectAll().where('contestId', '=', contestId).orderBy('index asc').execute();
 
         if (cachedProb.length < 1)
-            return msg.reply('Contest doesn\'t exist or hasn\'t finished yet!');
+            return interaction.reply('Contest doesn\'t exist or hasn\'t finished yet!');
 
         if (!cachedProb[0].predicted_rating) {
             const resp = await api.getContestRatings(contestId);
@@ -79,7 +79,7 @@ export const probRatCmd: Command = {
 
         const tableMsg = table.toString();
 
-        await msg.reply({
+        await interaction.reply({
             content: `\`\`\`${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``
         });
     },
