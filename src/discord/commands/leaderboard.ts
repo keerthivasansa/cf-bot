@@ -13,12 +13,8 @@ export const leaderboardCmd: Command = {
         .setName("leaderboard")
         .setDescription("View current leaderboard"),
 
-    async execute(msg) {
-        await msg.deferReply();
-
+    async execute(msg, interaction) {
         const users = await db.selectFrom("users").selectAll().orderBy("rating desc").execute();
-
-        console.log(users);
 
         const discord = DiscordClient.get();
         const chunkSize = 10;
@@ -57,7 +53,7 @@ export const leaderboardCmd: Command = {
 
         const row = getNavButtons(currentPage, totalPages);
 
-        await msg.editReply({
+        await interaction.reply({
             content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
             components: [row],
         });
@@ -65,10 +61,10 @@ export const leaderboardCmd: Command = {
         const filter = (i: any) => i.user.id === msg.user.id;
         const collector = msg.channel.createMessageComponentCollector({ filter, time: collectorTime });
 
-        collector.on('collect', async (interaction) => {
-            if (interaction.customId === 'prev') {
+        collector.on('collect', async (collectInteraction) => {
+            if (collectInteraction.customId === 'prev') {
                 currentPage = Math.max(currentPage - 1, 0);
-            } else if (interaction.customId === 'next') {
+            } else if (collectInteraction.customId === 'next') {
                 currentPage = Math.min(currentPage + 1, totalPages - 1);
             }
 
@@ -76,14 +72,14 @@ export const leaderboardCmd: Command = {
 
             const updatedRow = getNavButtons(currentPage,  totalPages);
 
-            await interaction.update({
+            await collectInteraction.update({
                 content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${updatedTableMsg}\`\`\``,
                 components: [updatedRow],
             });
         });
 
         collector.on('end', async () => {
-            await msg.editReply({
+            await interaction.reply({
                 content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
                 components: [],
             });

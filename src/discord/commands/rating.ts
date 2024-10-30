@@ -18,7 +18,7 @@ export const ratingCmd: Command = {
             .setDescription('Mention the user you want to check the rating of')
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
 
@@ -26,13 +26,13 @@ export const ratingCmd: Command = {
         const showEntire = msg.options.getBoolean('full');
 
         if (!user)
-            return msg.reply("User has not registered their codeforces handle!")
+            return interaction.reply("User has not registered their codeforces handle!")
 
         const cfApi = CFApiFactory.get();
         const allRatings = await cfApi.getUserRatings(user.handle);
 
         if (allRatings.length === 0)
-            return msg.reply("You have not participated in any contests yet!");
+            return interaction.reply("You have not participated in any contests yet!");
 
         const last10 = allRatings.slice(Math.max(0, allRatings.length - 10));
 
@@ -63,7 +63,7 @@ export const ratingCmd: Command = {
             .setColor(getRatingColor(currRating))
             .setImage('attachment://canvas.png');
 
-        return msg.reply({
+        return interaction.reply({
             embeds: [embed],
             files: [attachment]
         });

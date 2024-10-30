@@ -13,7 +13,7 @@ export const dailyCmd: Command = {
         .setName('daily')
         .setDescription('Finish your daily problem'),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const user = await db.selectFrom('users').selectAll().where('discordId', '=', msg.user.id).executeTakeFirst();
         const daily = await db.selectFrom('daily_problem').selectAll().where('discord_id', '=', msg.user.id).executeTakeFirst();
         const today = new Date();
@@ -21,22 +21,22 @@ export const dailyCmd: Command = {
         console.log(daily, { today })
 
         if (!user)
-            return msg.reply("Register your handle using `/verify` first to complete daily problems.");
+            return interaction.reply("Register your handle using `/verify` first to complete daily problems.");
 
         const cfApi = CFApiFactory.get();
 
         if (daily && daily.last_updated.getTime() == today.getTime()) {
             if (daily.solved) // finished
-                return msg.reply("You have already completed today's daily problem, come back tomorrow! :rocket:")
+                return interaction.reply("You have already completed today's daily problem, come back tomorrow! :rocket:")
 
             // check submission
             const submissions = await cfApi.getUserSolvedProblems(user.handle, daily.problem_contest);
             const probLink = genProblemLink(daily.problem_contest, daily.problem_index);
 
             if (!submissions.has(daily.problem_index))
-                return msg.reply(`You have not submitted a solution to the problem! The problem link: ${probLink}`)
+                return interaction.reply(`You have not submitted a solution to the problem! The problem link: ${probLink}`)
 
-            await msg.reply(`Congratulations! \`+${DAILY_POINTS}\`, come back tomorrow! :tada:`)
+            await interaction.reply(`Congratulations! \`+${DAILY_POINTS}\`, come back tomorrow! :tada:`)
 
             await db
                 .updateTable('users')
@@ -99,7 +99,7 @@ export const dailyCmd: Command = {
             console.log("scanned through ", offset, "problems")
 
             if (!problem)
-                return msg.reply('You have solved all problems that have been cached till now! - Amazing!')
+                return interaction.reply('You have solved all problems that have been cached till now! - Amazing!')
 
             const probId = `${problem.contestId}${problem.index}`;
             const probLink = genProblemLink(problem.contestId, problem.index);
@@ -126,8 +126,8 @@ export const dailyCmd: Command = {
                     .where('discord_id', '=', msg.user.id)
                     .execute();
             }
-            return msg.reply(`Your daily problem: \`${probId} (${problem.official_rating})\`.\nVisit: ${probLink}`)
+            return interaction.reply(`Your daily problem: \`${probId} (${problem.official_rating})\`.\nVisit: ${probLink}`)
         } else
-            return msg.reply("Your rating has not been updated yet, please come back later!");
+            return interaction.reply("Your rating has not been updated yet, please come back later!");
     },
 };

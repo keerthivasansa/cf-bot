@@ -22,7 +22,7 @@ export const percentileCmd: Command = {
             .setDescription('Mention a user to get their percentile')
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
 
@@ -30,7 +30,7 @@ export const percentileCmd: Command = {
         const type = (msg.options.getString('type') as PercentileType) || 'max';
 
         if (!user)
-            return msg.reply("User has not registered their codeforces handle!");
+            return interaction.reply("User has not registered their codeforces handle!");
 
         const percApi = CFPercentileFactory.get();
 
@@ -51,7 +51,7 @@ export const percentileCmd: Command = {
             .setColor(getRatingColor(usrRating))
             .setImage("attachment://canvas.png");
 
-        return msg.reply({
+        return interaction.reply({
             embeds: [embed],
             files: [attachment]
         })

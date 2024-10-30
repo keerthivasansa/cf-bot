@@ -16,9 +16,8 @@ export const verifyCmd: Command = {
         )
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const handle = msg.options.getString('handle');
-        const currTime = performance.now();
         const alpha = ['A', 'B', 'C']
 
         const randNum = randomInt(1000, 2000);
@@ -36,7 +35,7 @@ export const verifyCmd: Command = {
         const actionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(btn);
 
-        const response = await msg.reply({
+        const response = await interaction.reply({
             content: `Submit a \`COMPILATION_ERROR\` to this problem: \`${probId}\` (https://codeforces.com/problemset/problem/${randNum}/${randAlpha}) and press the button once you are done!`,
             components: [actionRow],
         });
