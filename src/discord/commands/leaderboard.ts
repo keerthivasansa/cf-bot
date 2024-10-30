@@ -58,7 +58,7 @@ export const leaderboardCmd: Command = {
         const row = getNavButtons(currentPage, totalPages);
 
         await msg.editReply({
-            content: `\`\`\`Leaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
+            content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
             components: [row],
         });
 
@@ -77,8 +77,15 @@ export const leaderboardCmd: Command = {
             const updatedRow = getNavButtons(currentPage,  totalPages);
 
             await interaction.update({
-                content: `\`\`\`Leaderboard - Page ${currentPage}\n\n${updatedTableMsg}\`\`\``,
+                content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${updatedTableMsg}\`\`\``,
                 components: [updatedRow],
+            });
+        });
+
+        collector.on('end', async () => {
+            await msg.editReply({
+                content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
+                components: [],
             });
         });
     },
