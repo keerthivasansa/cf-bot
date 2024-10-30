@@ -77,7 +77,7 @@ export const perfCmd: Command = {
             await Promise.all(promises);
             console.timeEnd("initial perf rating")
 
-            for (let i = st; i < 5; i++) {
+            for (let i = st; i < Math.min(5, allRatings.length); i++) {
                 const s = allRatings[i];
                 const d = new Date(s.ratingUpdateTimeSeconds * 1000);
                 const rank = result.get(i);
