@@ -124,10 +124,10 @@ export class CFCacher {
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
                 if (oldRating !== usr.rating) {
-                    const alertMessage = alertNewLevel(usr.rating, usr.maxRating);
+                    const alertMessage = alertNewLevel(usr.handle,usr.rating, usr.maxRating);
                     if (alertMessage) {
-                        const channel =  DiscordClient.getChannel('channel-id-goes-here');
-                        channel.send(alertMessage);
+                        const channel = await DiscordClient.get().channels.cache.get('###')
+                        channel.send(alertMessage)
                     }
                 }
 

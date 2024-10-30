@@ -1,4 +1,4 @@
-function alertNewLevel(curr_rating: number, max_rating: number): string | null {
+function alertNewLevel(handle : string ,curr_rating: number, max_rating: number): string | null {
     const levels = [
         { name: "Tourist", minRating: 4000 },
         { name: "Legendary Grandmaster", minRating: 3000 },
@@ -17,12 +17,12 @@ function alertNewLevel(curr_rating: number, max_rating: number): string | null {
         const newLevel = levels.find(level => curr_rating >= level.minRating);
         
         if (newLevel) {
-            return `🎉 Congratulations! You've reached a new level: ${newLevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉`;
+            return `🎉 Congratulations ${handle} ! You've reached a new level: ${newLevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉`;
         }
     }
     
     return null;
 }
 
-console.log( alertNewLevel(1204, 1100));
+console.log( alertNewLevel("Hello",1204, 1100));
 
