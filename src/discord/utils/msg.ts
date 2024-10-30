@@ -1,6 +1,6 @@
-import type { ChatInputCommandInteraction, InteractionReplyOptions } from "discord.js";
+import { EmbedBuilder, type ChatInputCommandInteraction, type InteractionReplyOptions } from "discord.js";
 
-export type InteractionHandler = (msg: ChatInputCommandInteraction, interaction: Interaction) => void;
+export type InteractionHandler = (msg: ChatInputCommandInteraction, interaction: Interaction) => Promise<any>;
 
 export class Interaction {
     private message: ChatInputCommandInteraction;
@@ -10,11 +10,11 @@ export class Interaction {
         this.message = message;
     }
 
-    handle(fn: InteractionHandler) {
+    async handle(fn: InteractionHandler) {
         setTimeout(() => this.defer(), this.DEFER_TIMEOUT);
 
         try {
-            fn(this.message, this);
+            await fn(this.message, this);
         } catch (err) {
             let msg = "";
             if (err instanceof Error)

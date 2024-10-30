@@ -43,6 +43,8 @@ export const infoCmd: Command = {
             }
         };
 
+        throw new Error("just testing if error gets sent");
+
         const dataWidth = 25;
         const table = new CliTable3({
             style: {
