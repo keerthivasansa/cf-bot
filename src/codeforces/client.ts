@@ -131,12 +131,25 @@ class CodeforcesApi {
                 count: 1
             }
         });
-        console.log({ cached: resp.cached });
         const data = resp.data as CfResult<{ contest: Contest, problems: Problem[] }>;
         if (data.status != 'OK')
             throw new Error(data.comment || 'Error fetching contest standings');
         return data.result.contest;
     }
+
+    async getContestRatingChanges(contestId: number) {
+        await this.tasker.waitForRelease();
+        const resp = await this.client.get('contest.ratingChanges', {
+            params: {
+                contestId,
+            }
+        });
+        const data = resp.data as CfResult<RatingChange[]>;
+        if (data.status != 'OK')
+            throw new Error(data.comment || 'Error fetching contest standings');
+        return data.result;
+    }
+
 }
 
 export type CFApi = CodeforcesApi;

@@ -30,6 +30,7 @@ export const perfCmd: Command = {
         if (!user)
             return msg.reply("User has not registered their codeforces handle!")
 
+
         const cfApi = CFApiFactory.get();
 
         const allRatings = await cfApi.getUserRatings(user.handle);
@@ -37,21 +38,55 @@ export const perfCmd: Command = {
         if (allRatings.length === 0)
             return msg.reply("You have not participated in any contests yet!");
 
-        const last10 = allRatings.slice(Math.max(0, allRatings.length - 10));
+        msg.deferReply();
 
-        const selected = showEntire ? allRatings : last10;
-        const selectedData = new Map<Date, number>();
+        const last10Index = Math.max(0, allRatings.length - 10);
+
+        const getRatingWithRank = async (contestId: number, rank: number) => {
+            const perf = await cfApi.getContestRatingChanges(contestId);
+            const k = 20;
+            const C = 75;
+
+            let sum = 0;
+            let count = 0;
+
+            for (let j = 1; j <= k; j++) {
+                if (rank - j >= 0) {
+                    sum += perf[rank - j].oldRating;
+                    count++;
+                }
+
+                if (rank + j < perf.length) {
+                    sum += perf[rank + j].oldRating;
+                    count++;
+                }
+            }
+
+            return Math.ceil(sum / count) + C;
+        }
+
+        const perfRatingMap = new Map<Date, number>();
+
+        if (showEntire || last10Index < 5) {
+            const st = showEntire ? 0 : last10Index;
+            for (let i = st; i < 5; i++) {
+                const s = allRatings[i];
+                const rank = await getRatingWithRank(s.contestId, s.rank);
+                const d = new Date(s.ratingUpdateTimeSeconds * 1000);
+                perfRatingMap.set(d, rank);
+            }
+        }
 
         let currRating = 0;
-        for (let i = 0; i < selected.length; i++) {
-            const s = selected[i];
+        for (let i = Math.max(5, last10Index); i < allRatings.length; i++) {
+            const s = allRatings[i];
             const d = new Date(s.ratingUpdateTimeSeconds * 1000);
             const perfRating = s.oldRating + (s.newRating - s.oldRating) * MULTIPLY_FACTOR;
             currRating = Math.max(perfRating, 0)
-            selectedData.set(d, currRating);
+            perfRatingMap.set(d, currRating);
         }
 
-        const chartUrl = new CFLineChart(selectedData)
+        const chartUrl = new CFLineChart(perfRatingMap)
             .markPoints()
             .labelMaxPoint()
             .setRangeBackground('RATING')
@@ -67,7 +102,7 @@ export const perfCmd: Command = {
             .setColor(getRatingColor(currRating))
             .setImage('attachment://canvas.png');
 
-        return msg.reply({
+        return msg.editReply({
             embeds: [embed],
             files: [attachment]
         });
