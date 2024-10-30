@@ -20,7 +20,7 @@ export const perfCmd: Command = {
             .setDescription('Mention a user to get their speed')
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
 
@@ -28,8 +28,7 @@ export const perfCmd: Command = {
         const showEntire = msg.options.getBoolean('full');
 
         if (!user)
-            return msg.reply("User has not registered their codeforces handle!")
-
+            return interaction.reply("User has not registered their codeforces handle!")
 
         const cfApi = CFApiFactory.get();
 
@@ -37,8 +36,6 @@ export const perfCmd: Command = {
 
         if (allRatings.length === 0)
             return msg.reply("You have not participated in any contests yet!");
-
-        await msg.deferReply();
 
         const last10Index = Math.max(0, allRatings.length - 10);
 
@@ -113,7 +110,7 @@ export const perfCmd: Command = {
             .setColor(getRatingColor(currRating))
             .setImage('attachment://canvas.png');
 
-        return msg.editReply({
+        return interaction.reply({
             embeds: [embed],
             files: [attachment]
         });

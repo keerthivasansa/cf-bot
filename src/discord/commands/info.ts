@@ -14,7 +14,7 @@ export const infoCmd: Command = {
             .setDescription('Mention a user to get their info')
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
 
@@ -25,10 +25,10 @@ export const infoCmd: Command = {
         ])
             .where('discordId', '=', selectedUser.id).executeTakeFirst();
 
-        if (!user) {
-            msg.reply('You have not registered your handle yet!');
-            return;
-        }
+        await new Promise((res, rej) => setTimeout(res, 3000));
+
+        if (!user)
+            return interaction.reply('You have not registered your handle yet!');
 
         // TODO pretty inefficient
         const ranks = await db.selectFrom('users').select([
@@ -43,6 +43,8 @@ export const infoCmd: Command = {
                 break;
             }
         };
+
+        throw new Error("just testing if error gets sent");
 
         const dataWidth = 25;
         const table = new CliTable3({
@@ -61,6 +63,6 @@ export const infoCmd: Command = {
             ['Rank', `#${usrRank}`]
         );
 
-        return msg.reply(`\`\`\`ansi\n${table.toString()}\`\`\``);
+        return interaction.reply(`\`\`\`ansi\n${table.toString()}\`\`\``);
     },
 };
