@@ -1,6 +1,7 @@
 import { QueuedTasker } from "$src/common/queue";
 import axios from "axios";
 import { setupCache } from 'axios-cache-interceptor';
+import { CFApiUnavailable } from "./error";
 
 class CodeforcesApi {
     private readonly INTERVAL = 150; // 2_000;
@@ -27,6 +28,7 @@ class CodeforcesApi {
             }
         });
         const data = resp.data as CfResult<Submission[]>;
+        this.isCfDown(data);
         if (data.status != 'OK')
             return [];
         return data.result;
@@ -36,6 +38,7 @@ class CodeforcesApi {
         await this.tasker.waitForRelease();
         const resp = await this.client.get('problemset.problems');
         const data = resp.data as CfResult<{ problems: Problem[] }>;
+        this.isCfDown(data);
         if (data.status != 'OK')
             return [];
         return data.result.problems;
@@ -50,6 +53,7 @@ class CodeforcesApi {
             }
         });
         const data = resp.data as CfResult<User[]>;
+        this.isCfDown(data);
         if (data.status != 'OK')
             return [];
         return data.result;
@@ -66,6 +70,7 @@ class CodeforcesApi {
             }
         });
         const data = resp.data as CfResult<Submission[]>;
+        this.isCfDown(data);
         if (data.status != 'OK')
             return new Set<string>();
         const solvedProbs: Set<string> = new Set();
@@ -88,6 +93,7 @@ class CodeforcesApi {
 
         const data = resp.data as CfResult<RatingChange[]>;
 
+        this.isCfDown(data);
         if (data.status != 'OK')
             return [];
 
@@ -104,6 +110,7 @@ class CodeforcesApi {
             }
         });
         const data = resp.data as CfResult<User[]>;
+        this.isCfDown(data);
         if (data.status != 'OK')
             return [];
         return data.result;
@@ -118,6 +125,8 @@ class CodeforcesApi {
             }
         });
         const data = resp.data as CfResult<{ rows: RanklistRow[], problems: Problem[] }>;
+        console.log({ respStatus: resp.status, dataStatus: data.status, resp: data })
+        this.isCfDown(data);
         if (data.status != 'OK')
             throw new Error(data.comment || 'Error fetching contest standings');
         return data.result;
@@ -132,6 +141,7 @@ class CodeforcesApi {
             }
         });
         const data = resp.data as CfResult<{ contest: Contest, problems: Problem[] }>;
+        this.isCfDown(data);
         if (data.status != 'OK')
             throw new Error(data.comment || 'Error fetching contest standings');
         return data.result.contest;
@@ -145,11 +155,18 @@ class CodeforcesApi {
             }
         });
         const data = resp.data as CfResult<RatingChange[]>;
+        this.isCfDown(data);
         if (data.status != 'OK')
             throw new Error(data.comment || 'Error fetching contest standings');
         return data.result;
     }
 
+    private isCfDown(responseData: unknown) {
+        const UNAVAILABLE_MESSAGE = 'Codeforces is temporarily unavailable';
+
+        if ((typeof responseData === 'string' || responseData instanceof String) && responseData.includes(UNAVAILABLE_MESSAGE))
+            throw new CFApiUnavailable("Codeforces API is temporarily unavaiable - please check back later!");
+    }
 }
 
 export type CFApi = CodeforcesApi;

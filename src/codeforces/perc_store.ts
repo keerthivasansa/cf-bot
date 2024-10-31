@@ -1,6 +1,7 @@
 
 import Redis from 'ioredis';
 import { CFApiFactory } from "./client";
+import { CFApiUnavailable } from './error';
 
 export type PercentileType = 'max' | 'current';
 
@@ -14,12 +15,24 @@ class CFPercentileStore {
 
     constructor() {
         this.redis = new Redis(Bun.env.REDIS_URL);
-        this.cache();
+        this.runCache();
 
         this.maxRatingMap = new Map();
         this.currRatingMap = new Map();
 
-        setInterval(() => this.cache(), this.INTERVAL);
+        setInterval(() => this.runCache(), this.INTERVAL);
+    }
+
+    async runCache() {
+        try {
+            console.log('running perc cache')
+            await this.cache();
+        } catch (err) {
+            if (err instanceof CFApiUnavailable)
+                console.log('Skipping perc cache - cf api down');
+            else
+                throw err;
+        }
     }
 
     async cache() {

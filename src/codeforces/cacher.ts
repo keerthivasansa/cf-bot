@@ -2,12 +2,13 @@ import { db } from "$db/index";
 import { InsertResult, UpdateResult } from "kysely";
 import { CFApi, CFApiFactory } from "./client";
 import { UserProcesser } from "$src/discord/user";
+import { CFApiUnavailable } from "./error";
 
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
-        ["problems", () => this.cacheProblems()],
-        ["users", () => this.cacheUsers()],
+        ["problems", this.cacheProblems.bind(this)],
+        ["users", this.cacheUsers.bind(this)],
     ] as const;
     private readonly cfApi: CFApi;
     private readonly lastExecuted: Record<string, number | null>;
@@ -30,15 +31,23 @@ export class CFCacher {
     async cacheCore(taskName: string, taskFn: Function) {
         const prevRun = this.lastExecuted[taskName] || 0;
         const now = Date.now();
-        if (prevRun + this.INTERVAL < now) {
-            console.log('Running cache job:', taskName);
-            taskFn();
-            await db.updateTable("cache_status").set({
-                last_executed: new Date()
-            }).where("cache_key", "=", taskName).execute();
-            setInterval(taskFn, this.INTERVAL);
-        } else
-            setTimeout(() => taskFn(), this.INTERVAL + prevRun - now);
+        try {
+            if (prevRun + this.INTERVAL < now) {
+                console.log('Running cache job:', taskName);
+                await taskFn();
+                await db.updateTable("cache_status").set({
+                    last_executed: new Date()
+                }).where("cache_key", "=", taskName).execute();
+                setInterval(taskFn, this.INTERVAL);
+            } else
+                setTimeout(taskFn, this.INTERVAL + prevRun - now);
+        } catch (err) {
+            console.log('error handled')
+            if (err instanceof CFApiUnavailable)
+                console.log("Skipping cache job - CF API down");
+            else
+                throw err;
+        }
     }
 
     async cacheProblems() {
@@ -114,7 +123,7 @@ export class CFCacher {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
                 const handle = usr.handle?.toLowerCase();
-                if (!handle || !ratingMap.get(handle)){
+                if (!handle || !ratingMap.get(handle)) {
                     console.log("missing info for", usr.handle)
                     return;
                 }
