@@ -9,7 +9,7 @@ import { verifyCmd } from "./commands/verify";
 import { ranklistCmd } from "./commands/ranklist";
 import { speedCmd } from "./commands/speed";
 import { stalkCmd } from "./commands/stalk";
-
+import { helpCmd } from "./commands/help";
 export const registeredCommands = [
     verifyCmd,
     infoCmd,
@@ -22,4 +22,5 @@ export const registeredCommands = [
     ranklistCmd,
     speedCmd,
     stalkCmd,
+    helpCmd,
 ]
