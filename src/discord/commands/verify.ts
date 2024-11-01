@@ -11,14 +11,18 @@ export const verifyCmd: Command = {
         .addStringOption(
             (option) =>
                 option.setName('handle')
-                      .setDescription('Your codeforces handle')
-                      .setRequired(true)
+                    .setDescription('Your codeforces handle')
+                    .setRequired(true)
         )
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]),
 
     async execute(msg, interaction) {
         const handle = msg.options.getString('handle');
+        const cfApi = CFApiFactory.get();
+        const user = await db.selectFrom('users').select('handle').where('discordId', '=', msg.user.id).executeTakeFirst();
         const alpha = ['A', 'B', 'C']
+        if (user.handle === handle)
+            return interaction.reply("You have already verified that handle!");
 
         const randNum = randomInt(1000, 2000);
         const index = randomInt(0, 2);
@@ -35,19 +39,24 @@ export const verifyCmd: Command = {
         const actionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(btn);
 
+        let replyMsg = "";
+        if (user)
+            replyMsg += `You have already registered a handle: \`${user.handle}\`, to change it to \`${handle}\`, \n`
+        replyMsg += `Submit a \`COMPILATION_ERROR\` to this problem: \`${probId}\` (https://codeforces.com/problemset/problem/${randNum}/${randAlpha}) and press the button once you are done!`;
+
         const response = await interaction.reply({
-            content: `Submit a \`COMPILATION_ERROR\` to this problem: \`${probId}\` (https://codeforces.com/problemset/problem/${randNum}/${randAlpha}) and press the button once you are done!`,
+            content: replyMsg,
             components: [actionRow],
         });
 
         const confirmation = await response.awaitMessageComponent({
             componentType: ComponentType.Button,
-            time: 120_000, // two minutes
-            filter: (i) => i.user.id === msg.user.id
+            time: 180_000, // three minutes
+            filter: (i) => i.user.id === msg.user.id,
+            dispose: true,
         });
 
         if (confirmation.customId === 'DONE') {
-            const cfApi = CFApiFactory.get();
             await response.edit({ components: [] });
             const submissions = await cfApi.getUserSubmissions(handle, 1);
             if (submissions.length < 1) {
