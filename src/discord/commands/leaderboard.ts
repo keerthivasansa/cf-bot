@@ -5,6 +5,7 @@ import CliTable3 from "cli-table3";
 import { DiscordClient } from "../client";
 import { getNavButtons } from "$src/lib/discordUtils";
 import { formatRating } from "$src/lib/utils";
+import { createDynamicSizedTable } from "../utils/dynamicTable";
 
 const collectorTime = 60000 * 3;
 
@@ -15,46 +16,43 @@ export const leaderboardCmd: Command = {
 
     async execute(msg, interaction) {
         const users = await db.selectFrom("users").selectAll().orderBy("rating desc").execute();
-
         const discord = DiscordClient.get();
-        const chunkSize = 10;
-        const totalPages = Math.ceil(users.length / chunkSize);
 
-        const createSubmissionTable = async (page: number): Promise<string> => {
-            const start = page * chunkSize;
-            const end = Math.min(start + chunkSize, users.length);
+        const indexWidth = 5;
+        const userWidth = 19;
+        const handleWidth = 19;
+        const ratingWidth = 11;
 
-            const indexWidth = 5;
-            const userWidth = 19;
-            const handleWidth = 19;
-            const ratingWidth = 11;
-        
-            const table = new CliTable3({
-                head: ['#', 'User', 'Handle', 'Rating'],
-                style: {
-                    head: [],
-                    border: [],
-                },
-                colAligns: ['center', 'center', 'center', 'center'],
-                colWidths: [indexWidth, userWidth, handleWidth, ratingWidth]
-            });
-        
-            for (let i = start; i < end; i++) {
-                const usr = users[i];
-                const member = await discord.users.fetch(usr.discordId);
-                table.push([(i + 1).toString(), member.displayName, usr.handle, formatRating(usr.rating, ratingWidth)]);
-            }
-        
-            return table.toString();
+        const data: string[][] = [];
+
+        console.time("fetching users");
+        for (let i = 0; i < users.length; i++) {
+            const usr = users[i];
+            const member = await DiscordClient.getUser(usr.discordId);
+            data.push([(i + 1).toString(), member.displayName, usr.handle, formatRating(usr.rating, ratingWidth)]);
         }
+        console.timeEnd("fetching users");
+
+
+        console.time("constructing table");
+        const slicedTables = createDynamicSizedTable(data, {
+            head: ['#', 'User', 'Handle', 'Rating'],
+            style: {
+                head: [],
+                border: [],
+            },
+            colAligns: ['center', 'center', 'center', 'center'],
+            colWidths: [indexWidth, userWidth, handleWidth, ratingWidth]
+        });
+        console.timeEnd("constructing table");
 
         let currentPage = 0;
-        const tableMsg = await createSubmissionTable(currentPage);
+        const totalPages = slicedTables.length;
 
         const row = getNavButtons(currentPage, totalPages);
 
         await interaction.reply({
-            content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
+            content: `\`\`\`ansi\nLeaderboard - Page ${currentPage + 1} / ${totalPages} \n\n${slicedTables[currentPage]}\`\`\``,
             components: [row],
         });
 
@@ -67,20 +65,16 @@ export const leaderboardCmd: Command = {
             } else if (collectInteraction.customId === 'next') {
                 currentPage = Math.min(currentPage + 1, totalPages - 1);
             }
-
-            const updatedTableMsg = await createSubmissionTable(currentPage);
-
-            const updatedRow = getNavButtons(currentPage,  totalPages);
-
+            const updatedRow = getNavButtons(currentPage, totalPages);
             await collectInteraction.update({
-                content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${updatedTableMsg}\`\`\``,
+                content: `\`\`\`ansi\nLeaderboard - Page ${currentPage + 1} / ${totalPages} \n\n${slicedTables[currentPage]}\`\`\``,
                 components: [updatedRow],
             });
         });
 
         collector.on('end', async () => {
             await interaction.reply({
-                content: `\`\`\`ansi\nLeaderboard - Page ${currentPage}\n\n${tableMsg}\`\`\``,
+                content: `\`\`\`ansi\nLeaderboard - Page ${currentPage + 1} / ${totalPages} \n\n${slicedTables[currentPage]}\`\`\``,
                 components: [],
             });
         });
