@@ -123,13 +123,8 @@ export class CFCacher {
                 console.log(handle, oldRating, usr.rating);
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
-                if (oldRating !== usr.rating) {
-                    const alertMessage = alertNewLevel(usr.handle,usr.rating, usr.maxRating);
-                    if (alertMessage) {
-                        const channel = await DiscordClient.get().channels.cache.get('###')
-                        channel.send(alertMessage)
-                    }
-                }
+                if (oldRating !== usr.rating)
+                    alertNewLevel(usr.handle,usr.rating, usr.maxRating);
 
                 promises.push(
                     tdb.updateTable('users')

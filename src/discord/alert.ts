@@ -1,4 +1,6 @@
-function alertNewLevel(handle : string ,curr_rating: number, max_rating: number): string | null {
+import { DiscordClient } from "./client";
+
+export async function alertNewLevel(handle: string, curr_rating: number, max_rating: number) {
     const levels = [
         { name: "Tourist", minRating: 4000 },
         { name: "Legendary Grandmaster", minRating: 3000 },
@@ -13,16 +15,14 @@ function alertNewLevel(handle : string ,curr_rating: number, max_rating: number)
         { name: "Newbie", minRating: 0 }
     ];
 
+    const discordClient = DiscordClient.get();
+    const channel = await discordClient.channels.fetch('###');
+
     if (curr_rating > max_rating) {
         const newLevel = levels.find(level => curr_rating >= level.minRating);
-        
-        if (newLevel) {
-            return `🎉 Congratulations ${handle} ! You've reached a new level: ${newLevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉`;
-        }
+        const msg = `🎉 Congratulations ${handle} ! You've reached a new level: ${newLevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉`;
+
+        if (channel.isTextBased() && channel.isSendable())
+            channel.send(msg);
     }
-    
-    return null;
 }
-
-console.log( alertNewLevel("Hello",1204, 1100));
-
