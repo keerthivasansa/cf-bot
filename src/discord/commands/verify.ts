@@ -21,7 +21,7 @@ export const verifyCmd: Command = {
         const cfApi = CFApiFactory.get();
         const user = await db.selectFrom('users').select('handle').where('discordId', '=', msg.user.id).executeTakeFirst();
         const alpha = ['A', 'B', 'C']
-        if (user.handle === handle)
+        if (user && user.handle === handle)
             return interaction.reply("You have already verified that handle!");
 
         const randNum = randomInt(1000, 2000);
