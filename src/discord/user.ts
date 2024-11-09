@@ -22,7 +22,7 @@ export class UserProcesser {
                 await member.roles.add(role);
                 if (oldRoleId != roleId)
                     await member.roles.remove(oldRole);
-            }
+            } catch {}
         }
     }
 }
