@@ -16,13 +16,15 @@ export async function alertNewLevel(handle: string, curr_rating: number, max_rat
     ];
 
     const discordClient = DiscordClient.get();
-    const channel = await discordClient.channels.fetch('###');
-
-    if (curr_rating > max_rating) {
-        const newLevel = levels.find(level => curr_rating >= level.minRating);
-        const msg = `🎉 Congratulations ${handle} ! You've reached a new level: ${newLevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉`;
+    const channelId = "1288870061875925075"
+    const channel = await discordClient.channels.fetch(channelId);
+    const maxlevel = levels.find(level => max_rating >= level.minRating);
+    const currlevel = levels.find(level => curr_rating >= level.minRating)
+    if (maxlevel.minRating > currlevel.minRating) {
+        const msg = `🎉 Congratulations ${handle} ! You've reached a new level: ${currlevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉`;
 
         if (channel.isTextBased() && channel.isSendable())
             channel.send(msg);
     }
 }
+alertNewLevel("Harsh",1200,1000)

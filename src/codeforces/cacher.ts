@@ -3,7 +3,6 @@ import { InsertResult, UpdateResult } from "kysely";
 import { CFApi, CFApiFactory } from "./client";
 import { UserProcesser } from "$src/discord/user";
 import { alertNewLevel } from "$src/discord/alert";
-import { DiscordClient } from "$src/discord/client";
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
