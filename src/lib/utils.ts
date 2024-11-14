@@ -22,7 +22,7 @@ export const wrapText = (text: string, maxWidth: number): string => {
 
 // ANSI color codes updated for better brightness and visibility
 const colorCodes = {
-    newbie: '\x1b[30m',               // Gray
+    newbie: '',                       // No color - white
     pupil: '\x1b[32m',                // Green
     specialist: '\x1b[36m',           // Cyan
     expert: '\x1b[34m',               // Blue

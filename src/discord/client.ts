@@ -26,6 +26,13 @@ export class DiscordClient {
         return this.client;
     }
 
+    static getUser(discordId: string) {
+        const user = this.client.users.cache.get(discordId);
+        if (user)
+            return user;
+        return this.client.users.fetch(discordId);
+    }
+
     static async getGuild() {
         if (this.guild)
             return this.guild;

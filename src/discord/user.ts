@@ -10,26 +10,19 @@ export class UserProcesser {
             const guild = await discordClient.guilds.fetch(serverId);
             try {
                 const member = await guild.members.fetch(discordId);
-                if (!guild.members.cache.has(discordId)) {
-                    console.log("member missing");
+                if (!guild.members.cache.has(discordId))
                     continue;
-                }
                 if (!member)
                     continue;
                 const roleId = getRole(newRating, serverId), oldRoleId = getRole(oldRating, serverId);
                 const oldRole = guild.roles.cache.get(oldRoleId);
                 const role = guild.roles.cache.get(roleId);
-                if (member.roles.cache.some(role => role.id === roleId)) {
-                    console.log("already exists");
+                if (member.roles.cache.some(role => role.id === roleId))
                     continue;
-                }
                 await member.roles.add(role);
                 if (oldRoleId != roleId)
                     await member.roles.remove(oldRole);
-                console.log({ oldRating, newRating, name: member.displayName, role: role.name })
-            } catch {
-                console.log("missing user")
-            }
+            } catch {}
         }
     }
 }

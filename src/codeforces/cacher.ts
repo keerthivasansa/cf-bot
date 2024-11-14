@@ -21,11 +21,20 @@ export class CFCacher {
 
     async init() {
         const cacheStatus = await db.selectFrom("cache_status").selectAll().execute();
+        console.log('cache status')
         for (let row of cacheStatus) {
+            console.log(row);
             this.lastExecuted[row.cache_key] = row.last_executed.getTime();
         }
-        for (let tsk of this.TASKS)
+        for (const tsk of this.TASKS) {
+            if (!this.lastExecuted[tsk[0]]) {
+                await db.insertInto('cache_status').values({
+                    cache_key: tsk[0],
+                    last_executed: new Date(),
+                }).execute();
+            }
             this.cacheCore(tsk[0], tsk[1]);
+        }
     }
 
     async cacheCore(taskName: string, taskFn: Function) {
@@ -35,12 +44,11 @@ export class CFCacher {
             if (prevRun + this.INTERVAL < now) {
                 console.log('Running cache job:', taskName);
                 await taskFn();
-                await db.updateTable("cache_status").set({
-                    last_executed: new Date()
-                }).where("cache_key", "=", taskName).execute();
                 setInterval(taskFn, this.INTERVAL);
-            } else
+            } else{
+                console.log('Skipping cache job: ', taskName);
                 setTimeout(taskFn, this.INTERVAL + prevRun - now);
+            }
         } catch (err) {
             console.log('error handled')
             if (err instanceof CFApiUnavailable)
@@ -128,18 +136,18 @@ export class CFCacher {
                     return;
                 }
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
-                console.log(handle, oldRating, usr.rating);
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
-                promises.push(
-                    tdb.updateTable('users')
-                        .set({
-                            rating: usr.rating,
-                            max_rating: usr.maxRating
-                        })
-                        .where('handle', '=', ogHandle)
-                        .execute()
-                )
+                if (usr.rating && usr.maxRating)
+                    promises.push(
+                        tdb.updateTable('users')
+                            .set({
+                                rating: usr.rating,
+                                max_rating: usr.maxRating
+                            })
+                            .where('handle', '=', ogHandle)
+                            .execute()
+                    )
             });
             return Promise.all(promises);
         });
