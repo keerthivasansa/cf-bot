@@ -27,4 +27,3 @@ export async function alertNewLevel(handle: string, curr_rating: number, max_rat
             channel.send(msg);
     }
 }
-alertNewLevel("Harsh",1200,1000)
