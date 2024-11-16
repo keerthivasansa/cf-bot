@@ -3,6 +3,7 @@ import { registeredCommands } from './commands';
 import { randomInt } from 'crypto';
 import { DiscordClient } from './client';
 import { TEST_SERVER_ID } from './roles';
+import { Interaction as ChatInteraction } from './utils/msg';
 
 export class Bot {
     private readonly client: Client;
@@ -78,11 +79,11 @@ export class Bot {
             return;
         }
 
-        try {
-            command(interaction);
-        } catch (error) {
-            console.error('Error executing command:', error);
-        }
+        if (interaction.isChatInputCommand()) {
+            const chatInteraction = new ChatInteraction(interaction);
+            chatInteraction.handle(command);
+        } else
+            console.log("Unknown interaction");
     }
 
     private startPresenceCycling() {

@@ -11,15 +11,18 @@ export const verifyCmd: Command = {
         .addStringOption(
             (option) =>
                 option.setName('handle')
-                      .setDescription('Your codeforces handle')
-                      .setRequired(true)
+                    .setDescription('Your codeforces handle')
+                    .setRequired(true)
         )
         .setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const handle = msg.options.getString('handle');
-        const currTime = performance.now();
+        const cfApi = CFApiFactory.get();
+        const user = await db.selectFrom('users').select('handle').where('discordId', '=', msg.user.id).executeTakeFirst();
         const alpha = ['A', 'B', 'C']
+        if (user && user.handle === handle)
+            return interaction.reply("You have already verified that handle!");
 
         const randNum = randomInt(1000, 2000);
         const index = randomInt(0, 2);
@@ -36,19 +39,24 @@ export const verifyCmd: Command = {
         const actionRow = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(btn);
 
-        const response = await msg.reply({
-            content: `Submit a \`COMPILATION_ERROR\` to this problem: \`${probId}\` (https://codeforces.com/problemset/problem/${randNum}/${randAlpha}) and press the button once you are done!`,
+        let replyMsg = "";
+        if (user)
+            replyMsg += `You have already registered a handle: \`${user.handle}\`, to change it to \`${handle}\`, \n`
+        replyMsg += `Submit a \`COMPILATION_ERROR\` to this problem: \`${probId}\` (https://codeforces.com/problemset/problem/${randNum}/${randAlpha}) and press the button once you are done!`;
+
+        const response = await interaction.reply({
+            content: replyMsg,
             components: [actionRow],
         });
 
         const confirmation = await response.awaitMessageComponent({
             componentType: ComponentType.Button,
-            time: 120_000, // two minutes
-            filter: (i) => i.user.id === msg.user.id
+            time: 180_000, // three minutes
+            filter: (i) => i.user.id === msg.user.id,
+            dispose: true,
         });
 
         if (confirmation.customId === 'DONE') {
-            const cfApi = CFApiFactory.get();
             await response.edit({ components: [] });
             const submissions = await cfApi.getUserSubmissions(handle, 1);
             if (submissions.length < 1) {
@@ -63,12 +71,21 @@ export const verifyCmd: Command = {
 
             const info = await cfApi.getUsersInfo([handle]);
 
-            await db.insertInto('users').values({
-                discordId: msg.user.id,
-                handle,
-                rating: info[0].rating,
-                max_rating: info[0].maxRating
-            }).execute();
+            if (user)
+                await db.updateTable('users')
+                    .set({
+                        handle,
+                        rating: info[0].rating,
+                        max_rating: info[0].maxRating
+                    }).where('discordId', '=', msg.user.id)
+                    .execute();
+            else
+                await db.insertInto('users').values({
+                    discordId: msg.user.id,
+                    handle,
+                    rating: info[0].rating,
+                    max_rating: info[0].maxRating
+                }).execute();
 
             await confirmation.update(`Handle: \`${handle}\` has been verified!`);
         } else

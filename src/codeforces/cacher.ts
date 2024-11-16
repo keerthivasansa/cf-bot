@@ -3,11 +3,12 @@ import { InsertResult, UpdateResult } from "kysely";
 import { CFApi, CFApiFactory } from "./client";
 import { UserProcesser } from "$src/discord/user";
 import { alertNewLevel } from "$src/discord/alert";
+import { CFApiUnavailable } from "./error";
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
-        ["problems", () => this.cacheProblems()],
-        ["users", () => this.cacheUsers()],
+        ["problems", this.cacheProblems.bind(this)],
+        ["users", this.cacheUsers.bind(this)],
     ] as const;
     private readonly cfApi: CFApi;
     private readonly lastExecuted: Record<string, number | null>;
@@ -20,25 +21,41 @@ export class CFCacher {
 
     async init() {
         const cacheStatus = await db.selectFrom("cache_status").selectAll().execute();
+        console.log('cache status')
         for (let row of cacheStatus) {
+            console.log(row);
             this.lastExecuted[row.cache_key] = row.last_executed.getTime();
         }
-        for (let tsk of this.TASKS)
+        for (const tsk of this.TASKS) {
+            if (!this.lastExecuted[tsk[0]]) {
+                await db.insertInto('cache_status').values({
+                    cache_key: tsk[0],
+                    last_executed: new Date(),
+                }).execute();
+            }
             this.cacheCore(tsk[0], tsk[1]);
+        }
     }
 
     async cacheCore(taskName: string, taskFn: Function) {
         const prevRun = this.lastExecuted[taskName] || 0;
         const now = Date.now();
-        if (prevRun + this.INTERVAL < now) {
-            console.log('Running cache job:', taskName);
-            taskFn();
-            await db.updateTable("cache_status").set({
-                last_executed: new Date()
-            }).where("cache_key", "=", taskName).execute();
-            setInterval(taskFn, this.INTERVAL);
-        } else
-            setTimeout(() => taskFn(), this.INTERVAL + prevRun - now);
+        try {
+            if (prevRun + this.INTERVAL < now) {
+                console.log('Running cache job:', taskName);
+                await taskFn();
+                setInterval(taskFn, this.INTERVAL);
+            } else{
+                console.log('Skipping cache job: ', taskName);
+                setTimeout(taskFn, this.INTERVAL + prevRun - now);
+            }
+        } catch (err) {
+            console.log('error handled')
+            if (err instanceof CFApiUnavailable)
+                console.log("Skipping cache job - CF API down");
+            else
+                throw err;
+        }
     }
 
     async cacheProblems() {
@@ -114,13 +131,13 @@ export class CFCacher {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
                 const handle = usr.handle?.toLowerCase();
-                if (!handle || !ratingMap.get(handle)){
+                if (!handle || !ratingMap.get(handle)) {
                     console.log("missing info for", usr.handle)
                     return;
                 }
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
-                console.log(handle, oldRating, usr.rating);
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
+
 
                 if (oldRating !== usr.rating)
                     alertNewLevel(usr.handle,usr.rating, usr.maxRating);
@@ -134,6 +151,17 @@ export class CFCacher {
                         .where('handle', '=', ogHandle)
                         .execute()
                 )
+                if (usr.rating && usr.maxRating)
+                    promises.push(
+                        tdb.updateTable('users')
+                            .set({
+                                rating: usr.rating,
+                                max_rating: usr.maxRating
+                            })
+                            .where('handle', '=', ogHandle)
+                            .execute()
+                    )
+
             });
             return Promise.all(promises);
         });

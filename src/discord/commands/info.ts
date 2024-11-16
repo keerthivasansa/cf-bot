@@ -3,6 +3,7 @@ import { Command } from "../type";
 import { db } from "$db/index";
 import CliTable3 from "cli-table3";
 import { sql } from "kysely";
+import { formatRating } from "$src/lib/utils";
 
 export const infoCmd: Command = {
     info: new SlashCommandBuilder()
@@ -13,7 +14,7 @@ export const infoCmd: Command = {
             .setDescription('Mention a user to get their info')
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
 
@@ -24,10 +25,8 @@ export const infoCmd: Command = {
         ])
             .where('discordId', '=', selectedUser.id).executeTakeFirst();
 
-        if (!user) {
-            msg.reply('You have not registered your handle yet!');
-            return;
-        }
+        if (!user)
+            return interaction.reply('You have not registered your handle yet!');
 
         // TODO pretty inefficient
         const ranks = await db.selectFrom('users').select([
@@ -55,11 +54,11 @@ export const infoCmd: Command = {
 
         table.push(
             ['Handle', user.handle],
-            ['Rating', user.rating],
+            ['Rating', formatRating(user.rating, dataWidth)],
             ['Score', user.score],
             ['Rank', `#${usrRank}`]
         );
 
-        return msg.reply(`\`\`\`\n${table.toString()}\`\`\``);
+        return interaction.reply(`\`\`\`ansi\n${table.toString()}\`\`\``);
     },
 };

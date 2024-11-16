@@ -16,7 +16,7 @@ export const probRatCmd: Command = {
                 .setRequired(true)
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const api = new ClistsApi();
         const cfApi = CFApiFactory.get();
 
@@ -26,13 +26,14 @@ export const probRatCmd: Command = {
         const cachedProb = await db.selectFrom('problems').selectAll().where('contestId', '=', contestId).orderBy('index asc').execute();
 
         if (cachedProb.length < 1)
-            return msg.reply('Contest doesn\'t exist or hasn\'t finished yet!');
+            return interaction.reply('Contest doesn\'t exist or hasn\'t finished yet!');
 
         if (!cachedProb[0].predicted_rating) {
             const resp = await api.getContestRatings(contestId);
             const problems = resp.objects;
+
             // clist weird behaviour if it hasnt predicted yet
-            const hasPrediction = problems.some((prob) => prob.rating !== 800)
+            const hasPrediction = problems.some((prob) => prob.rating > 800)
 
             if (hasPrediction)
                 await db.transaction().execute(async (tdb) => {
@@ -75,12 +76,10 @@ export const probRatCmd: Command = {
         });
 
         for (const prob of cachedProb)
-            table.push([prob.index, prob.official_rating || '-', formatRating(prob.predicted_rating, predictedRatingWidth) || '-']);
+            table.push([prob.index, prob.official_rating || '-', prob.predicted_rating ? formatRating(prob.predicted_rating, predictedRatingWidth) : '-']);
 
         const tableMsg = table.toString();
 
-        await msg.reply({
-            content: `\`\`\`${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``
-        });
+        await interaction.reply(`\`\`\`ansi\n${contestInfo.name} Ratings\n\n${tableMsg}\`\`\``);
     },
 }

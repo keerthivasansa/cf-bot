@@ -20,20 +20,20 @@ export const speedCmd: Command = {
             .setDescription('Mention the user you want to check the speed of')
         ),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
 
         const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
 
         if (!user)
-            return msg.reply("User has not registered their codeforces handle!")
+            return interaction.reply("User has not registered their codeforces handle!")
 
         const cfApi = CFApiFactory.get();
 
         const allUserSubmissions = await cfApi.getUserSubmissions(user.handle, 10000);
         if (allUserSubmissions.length === 0) {
-            return msg.reply("Participate in some contests!");
+            return interaction.reply("Participate in some contests!");
         }
         allUserSubmissions.sort((a, b) => {
             if (a.contestId == b.contestId) {
@@ -100,7 +100,7 @@ export const speedCmd: Command = {
             .setTitle(`${user.handle} - Speed`)
             .setImage('attachment://canvas.png');
 
-        return msg.reply({
+        return interaction.reply({
             embeds: [embed],
             files: [attachment]
         });
