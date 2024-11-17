@@ -2,8 +2,8 @@ import { db } from "$db/index";
 import { InsertResult, UpdateResult } from "kysely";
 import { CFApi, CFApiFactory } from "./client";
 import { UserProcesser } from "$src/discord/user";
+import { alertNewLevel } from "$src/discord/alert";
 import { CFApiUnavailable } from "./error";
-
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
@@ -138,6 +138,19 @@ export class CFCacher {
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
+
+                if (oldRating !== usr.rating)
+                    alertNewLevel(usr.handle,usr.rating, usr.maxRating);
+
+                promises.push(
+                    tdb.updateTable('users')
+                        .set({
+                            rating: usr.rating,
+                            max_rating: usr.maxRating
+                        })
+                        .where('handle', '=', ogHandle)
+                        .execute()
+                )
                 if (usr.rating && usr.maxRating)
                     promises.push(
                         tdb.updateTable('users')
@@ -148,6 +161,7 @@ export class CFCacher {
                             .where('handle', '=', ogHandle)
                             .execute()
                     )
+
             });
             return Promise.all(promises);
         });
