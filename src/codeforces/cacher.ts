@@ -123,8 +123,6 @@ export class CFCacher {
         const ratingMap = new Map<string, [number, string, string]>();
         users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.discordId, usr.handle]));
 
-        alertNewLevel('sakeerthi23', 1200, 1400);
-
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");
         console.log({ handles });
@@ -141,6 +139,8 @@ export class CFCacher {
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
                 if (usr.rating === oldRating)
                     return;
+                if (usr.rating > usr.maxRating)
+                    alertNewLevel(discordId, usr.rating, usr.maxRating);
 
                 console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
 
