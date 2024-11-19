@@ -4,6 +4,7 @@ export class DiscordClient {
     private static GUILD_ID = '1289271676001062972';
     private static client: Client;
     private static guild: Guild;
+    private static ready = false;
 
     private static init() {
         const client = new Client({
@@ -20,9 +21,21 @@ export class DiscordClient {
         this.client = client;
     }
 
-    static get() {
+    static async waitForReady() {
+        if (this.ready)
+            return true;
+        return new Promise((res, rej) => {
+            this.client.on("ready", () => {
+                this.ready = true;
+                res(true);
+            });
+        })
+    }
+
+    static async get() {
         if (!this.client)
             this.init();
+        await this.waitForReady();
         return this.client;
     }
 

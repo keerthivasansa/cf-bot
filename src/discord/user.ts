@@ -5,7 +5,7 @@ import { getRole, MAIN_SERVER_ID, TEST_SERVER_ID } from "./roles";
 export class UserProcesser {
 
     static async processRatingChange(discordId: string, oldRating: number, newRating: number) {
-        const discordClient = DiscordClient.get();
+        const discordClient = await DiscordClient.get();
         for (const serverId of [TEST_SERVER_ID, MAIN_SERVER_ID]) {
             const guild = await discordClient.guilds.fetch(serverId);
             try {

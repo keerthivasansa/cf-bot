@@ -4,6 +4,7 @@ import { CFApi, CFApiFactory } from "./client";
 import { UserProcesser } from "$src/discord/user";
 import { alertNewLevel } from "$src/discord/alert";
 import { CFApiUnavailable } from "./error";
+import { DiscordClient } from "$src/discord/client";
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
@@ -45,7 +46,7 @@ export class CFCacher {
                 console.log('Running cache job:', taskName);
                 await taskFn();
                 setInterval(taskFn, this.INTERVAL);
-            } else{
+            } else {
                 console.log('Skipping cache job: ', taskName);
                 setTimeout(taskFn, this.INTERVAL + prevRun - now);
             }
@@ -122,6 +123,8 @@ export class CFCacher {
         const ratingMap = new Map<string, [number, string, string]>();
         users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.discordId, usr.handle]));
 
+        alertNewLevel('sakeerthi23', 1200, 1400);
+
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");
         console.log({ handles });
@@ -131,16 +134,20 @@ export class CFCacher {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
                 const handle = usr.handle?.toLowerCase();
-                if (!handle || !ratingMap.get(handle)) {
+                if (!usr.rating || !usr.maxRating || !handle || !ratingMap.get(handle)) {
                     console.log("missing info for", usr.handle)
                     return;
                 }
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
+                if (usr.rating === oldRating)
+                    return;
+
+                console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
+
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
-
                 if (oldRating !== usr.rating)
-                    alertNewLevel(usr.handle,usr.rating, usr.maxRating);
+                    alertNewLevel(usr.handle, usr.rating, usr.maxRating);
 
                 promises.push(
                     tdb.updateTable('users')
