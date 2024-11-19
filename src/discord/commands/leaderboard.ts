@@ -1,7 +1,6 @@
-import { SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 import { Command } from "../type";
 import { db } from "$db/index";
-import CliTable3 from "cli-table3";
 import { DiscordClient } from "../client";
 import { getNavButtons } from "$src/lib/discordUtils";
 import { formatRating } from "$src/lib/utils";
@@ -16,7 +15,6 @@ export const leaderboardCmd: Command = {
 
     async execute(msg, interaction) {
         const users = await db.selectFrom("users").selectAll().orderBy("rating desc").execute();
-        const discord = DiscordClient.get();
 
         const indexWidth = 5;
         const userWidth = 19;

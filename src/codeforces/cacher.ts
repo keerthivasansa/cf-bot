@@ -4,6 +4,7 @@ import { CFApi, CFApiFactory } from "./client";
 import { UserProcesser } from "$src/discord/user";
 import { alertNewLevel } from "$src/discord/alert";
 import { CFApiUnavailable } from "./error";
+import { DiscordClient } from "$src/discord/client";
 export class CFCacher {
     private readonly INTERVAL = 1800_000 // every hour;
     private readonly TASKS = [
@@ -121,6 +122,8 @@ export class CFCacher {
 
         const ratingMap = new Map<string, [number, string, string]>();
         users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.discordId, usr.handle]));
+
+        alertNewLevel('sakeerthi23', 1200, 1400);
 
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");

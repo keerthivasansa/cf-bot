@@ -6,7 +6,7 @@ import { TEST_SERVER_ID } from './roles';
 import { Interaction as ChatInteraction } from './utils/msg';
 
 export class Bot {
-    private readonly client: Client;
+    private client: Client;
     private readonly CLIENT_ID: string;
     private readonly TOKEN: string;
     private readonly PRESENCE_INTERVAL = 120_000; // 2 minutes
@@ -26,11 +26,11 @@ export class Bot {
         if (!this.CLIENT_ID || !this.TOKEN) {
             throw new Error('Missing environment variables: DISCORD_CLIENT or DISCORD_TOKEN.');
         }
-        this.client = DiscordClient.get();
         this.init();
     }
 
     private async init() {
+        this.client = await DiscordClient.get();
         try {
             this.registerEvents();
             await this.registerCommands();
