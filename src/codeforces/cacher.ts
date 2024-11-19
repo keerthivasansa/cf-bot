@@ -45,7 +45,7 @@ export class CFCacher {
                 console.log('Running cache job:', taskName);
                 await taskFn();
                 setInterval(taskFn, this.INTERVAL);
-            } else{
+            } else {
                 console.log('Skipping cache job: ', taskName);
                 setTimeout(taskFn, this.INTERVAL + prevRun - now);
             }
@@ -131,16 +131,20 @@ export class CFCacher {
             let promises: Promise<any>[] = [];
             info.forEach(usr => {
                 const handle = usr.handle?.toLowerCase();
-                if (!handle || !ratingMap.get(handle)) {
+                if (!usr.rating || !usr.maxRating || !handle || !ratingMap.get(handle)) {
                     console.log("missing info for", usr.handle)
                     return;
                 }
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
+                if (usr.rating === oldRating)
+                    return;
+
+                console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
+
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
-
                 if (oldRating !== usr.rating)
-                    alertNewLevel(usr.handle,usr.rating, usr.maxRating);
+                    alertNewLevel(usr.handle, usr.rating, usr.maxRating);
 
                 promises.push(
                     tdb.updateTable('users')
