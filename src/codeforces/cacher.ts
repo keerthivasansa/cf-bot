@@ -139,7 +139,7 @@ export class CFCacher {
                 const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
                 if (usr.rating === oldRating)
                     return;
-                if (usr.rating > usr.maxRating)
+                if (usr.rating > oldRating)
                     alertNewLevel(discordId, usr.rating, usr.maxRating);
 
                 console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
