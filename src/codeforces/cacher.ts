@@ -119,11 +119,8 @@ export class CFCacher {
 
     async cacheUsers() {
         const users = await db.selectFrom('users').selectAll().where('handle', 'is not', null).execute();
-
-        const ratingMap = new Map<string, [number, string, string]>();
-        users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.discordId, usr.handle]));
-
-        alertNewLevel('sakeerthi23', 1200, 1400);
+        const ratingMap = new Map<string, [number, number, string, string]>();
+        users.forEach(usr => ratingMap.set(usr.handle.toLowerCase(), [usr.rating, usr.max_rating, usr.discordId, usr.handle]));
 
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");
@@ -138,16 +135,15 @@ export class CFCacher {
                     console.log("missing info for", usr.handle)
                     return;
                 }
-                const [oldRating, discordId, ogHandle] = ratingMap.get(handle);
+                const [oldRating,   oldMaxRating, discordId, ogHandle] = ratingMap.get(handle);
                 if (usr.rating === oldRating)
                     return;
-
                 console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
 
-                UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
+                if (oldRating < usr.rating)
+                    alertNewLevel(discordId, usr.rating, oldMaxRating);
 
-                if (oldRating !== usr.rating)
-                    alertNewLevel(usr.handle, usr.rating, usr.maxRating);
+                UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 
                 promises.push(
                     tdb.updateTable('users')
