@@ -8,84 +8,79 @@ export const helpCmd: Command = {
         .setName("help")
         .setDescription("List all commands and their descriptions"),
 
-    async execute(msg) {
+    async execute(msg, interaction) {
         const commands = [
-            { name: "verify", description: "Verify your codeforces handle" },
-            { name:"info" , description: "Get user's current registered handle"},
-            { name: "daily", description: "Get the daily codeforces problem" },
-            { name: "leaderboard", description: "Get the server leaderboard" },
-            { name: "ranklist", description: "Get the ranklist for a specific contest" },
-            { name: "rating", description: "Fetch a user's rating graph" },
-            { name: "stalk", description: "Fetch the most recent submissions of a user" },
-            { name: "probrat", description: "Get the official/predicted rating of problems for a given contest" },
-            { name: "perf", description: "Fetch a user's performance graph" },
-            { name: "percentile", description: "Get your percentile based on your account stats" },
-            { name:"speed" , description: "Get user's speed of solving problems in contest"},
+            { name: "verify", description: "Link your Codeforces handle to your Discord account and start your journey!" },
+            { name: "info", description: "Get the Codeforces handle currently linked to your profile." },
+            { name: "daily", description: "Challenge yourself with a random Codeforces problem every day!" },
+            { name: "leaderboard", description: "See who's leading in your server's Codeforces rankings!" },
+            { name: "ranklist", description: "Check the detailed rankings for any specific Codeforces contest." },
+            { name: "rating", description: "View a visual graph of your Codeforces rating over time." },
+            { name: "stalk", description: "Curious? Check out the latest submissions made by any user!" },
+            { name: "probrat", description: "Get the official or predicted ratings of problems in a specific contest." },
+            { name: "perf", description: "Analyze your performance over contests with a detailed graph." },
+            { name: "percentile", description: "See where you rank among Codeforces users worldwide!" },
+            { name: "speed", description: "Find out how fast you solve problems during contests!" },
         ];
 
-        // Pagination setup
-        let chunkSize = 10; // Start with 10 entries per page
+        let chunkSize = 5; // Adjust entries per page as needed
         let totalPages = Math.ceil(commands.length / chunkSize);
         let currentPage = 0;
 
-        const createMessageContent = (page) => {
-            const tableMsg = createCommandsTable(page, chunkSize, commands);
-            return `Here are the available commands - Page ${page + 1}/${totalPages}\n\n${tableMsg}`;
+        const createMessageContent = (page: number): string => {
+            const start = page * chunkSize;
+            const end = Math.min(start + chunkSize, commands.length);
+            const pageData = commands.slice(start, end);
+
+            const table = new Table({
+                head: ['Command', 'Description'],
+                colAligns: ['center', 'center'],
+                colWidths: [15, 45], // Set column widths
+                wordWrap: true,      // Enable word wrapping
+                style: {
+                    head: [],
+                    border: [],
+                    "padding-left": 0,
+                    "padding-right": 0,
+                },
+            });
+
+            pageData.forEach(cmd => {
+                table.push([`/${cmd.name}`, cmd.description]);
+            });
+
+            return `Here are the available commands - Page ${page + 1}/${totalPages}\n\n${table.toString()}`;
         };
 
-        const messageContent = createMessageContent(currentPage);
+        let messageContent = createMessageContent(currentPage);
         const buttons = getNavButtons(currentPage, totalPages);
 
-        const sentMessage = await msg.reply({
+        await interaction.reply({
             content: `\`\`\`${messageContent}\`\`\``,
             components: [buttons],
         });
 
-        const filter = (interaction) => ['prev', 'next'].includes(interaction.customId) && interaction.user.id === msg.user.id;
-        const collector = sentMessage.createMessageComponentCollector({ filter, time: 60000 });
+        const filter = (i: any) => i.user.id === msg.user.id;
+        const collector = msg.channel.createMessageComponentCollector({ filter, time: 60000 });
 
-        collector.on('collect', async (interaction) => {
-            if (interaction.customId === 'prev') {
+        collector.on('collect', async (collectInteraction) => {
+            if (collectInteraction.customId === 'prev') {
                 currentPage = Math.max(currentPage - 1, 0);
-            } else if (interaction.customId === 'next') {
+            } else if (collectInteraction.customId === 'next') {
                 currentPage = Math.min(currentPage + 1, totalPages - 1);
             }
 
-            const newMessageContent = createMessageContent(currentPage);
-            const newButtons = getNavButtons(currentPage, totalPages);
+            messageContent = createMessageContent(currentPage);
+            const updatedButtons = getNavButtons(currentPage, totalPages);
 
-            await interaction.update({
-                content: `\`\`\`${newMessageContent}\`\`\``,
-                components: [newButtons],
+            await collectInteraction.update({
+                content: `\`\`\`${messageContent}\`\`\``,
+                components: [updatedButtons],
             });
         });
 
         collector.on('end', async () => {
-            await sentMessage.edit({ components: [] });
+            await interaction.reply({ components: [] });
         });
     },
 };
-
-// Helper function to create the commands table
-function createCommandsTable(page, chunkSize, commands) {
-    const table = new Table({
-        head: ['Command', 'Description'],
-        colAligns: ['center', 'center'],
-        style: {
-            head: [],
-            border: [],
-            "padding-left": 0,
-            "padding-right": 0,
-        },
-    });
-
-    const start = page * chunkSize;
-    const end = start + chunkSize;
-    const chunk = commands.slice(start, end);
-
-    chunk.forEach(cmd => {
-        table.push([`/${cmd.name}`, cmd.description]);
-    });
-
-    return table.toString();
-}
