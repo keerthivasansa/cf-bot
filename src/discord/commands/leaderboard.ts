@@ -3,7 +3,7 @@ import { Command } from "../type";
 import { db } from "$db/index";
 import { getNavButtons } from "$src/lib/discordUtils";
 import { formatRating } from "$src/lib/utils";
-import CliTable3 from "cli-table3";
+import { createDynamicSizedTable } from "$src/discord/utils/dynamicTable";
 
 const collectorTime = 60000 * 3; // 3 minutes
 
@@ -50,34 +50,26 @@ export const leaderboardCmd: Command = {
         const totalPages = Math.ceil(ranklist.length / currentChunkSize);
 
         const createMessageContent = (page: number): string => {
-            let tableMsg: string;
-            let characterCount: number;
-            do {
-                const start = page * currentChunkSize;
-                const end = Math.min(start + currentChunkSize, ranklist.length);
+            const start = page * currentChunkSize;
+            const end = Math.min(start + currentChunkSize, ranklist.length);
 
-                const table = new CliTable3({
-                    head: ["Rank", "Name", sortBy],
-                    colWidths: [6, 30, 12],
-                    style: { head: [], border: [], "padding-left": 1, "padding-right": 1 },
-                });
+            const tableData = [];
 
-                for (let i = start; i < end; i++) {
-                    const entry = ranklist[i];
-                    table.push([entry.rank, entry.handle, entry.value]);
-                }
+            for (let i = start; i < end; i++) {
+                const entry = ranklist[i];
+                tableData.push([entry.rank, entry.handle, entry.value]);
+            }
 
-                tableMsg = table.toString();
-                characterCount = tableMsg.length + 100;
+            const tableConfig = {
+                head: ["Rank", "Name", sortBy],
+                colWidths: [6, 30, 12],
+                style: { head: [], border: [], "padding-left": 1, "padding-right": 1 },
+            };
 
-                if (characterCount > 2000) currentChunkSize--;
-
-            } while (characterCount > 2000 && currentChunkSize > 1);
-            currentChunkSize = 10;
-
-            return `Leaderboard - Page ${page + 1}/${totalPages}\n\n${tableMsg}`;
+            const tables = createDynamicSizedTable(tableData, tableConfig);
+            const title = sortBy === "score" ? "Daily Problems Leaderboard" : "Leaderboard";
+            return `${title} - Page ${page + 1}/${totalPages}\n\n${tables.join('\n')}`;
         };
-
         let currentPage = 0;
         const messageContent = createMessageContent(currentPage);
         const buttons = getNavButtons(currentPage, totalPages);
