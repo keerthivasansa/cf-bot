@@ -22,7 +22,7 @@ export async function alertNewLevel(discordId: string, handle: string, curr_rati
     const currlevel = levels.find(level => curr_rating >= level.minRating);
 
     if (maxlevel.minRating < currlevel.minRating) {
-        const msg = `🎉 Congratulations <@${discordId}> ! You've reached a new level: ${currlevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉\nCF Handle: ${handle}`;
+        const msg = `🎉 Congratulations <@${discordId}> ! You've reached a new level: ${currlevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉\n\nCF Handle: ${handle}`;
 
         if (ch.isTextBased() && ch.isSendable())
             ch.send(msg);
