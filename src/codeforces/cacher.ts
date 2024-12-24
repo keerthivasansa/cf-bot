@@ -141,7 +141,7 @@ export class CFCacher {
                 console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
 
                 if (oldRating < usr.rating)
-                    alertNewLevel(discordId, usr.rating, oldMaxRating);
+                    alertNewLevel(discordId,usr.handle, usr.rating, oldMaxRating);
 
                 UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
 

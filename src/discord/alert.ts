@@ -1,6 +1,6 @@
 import { DiscordClient } from "./client";
 
-export async function alertNewLevel(discordId: string, curr_rating: number, max_rating: number) {
+export async function alertNewLevel(discordId: string, handle: string, curr_rating: number, max_rating: number) {
     const levels = [
         { name: "Tourist", minRating: 4000 },
         { name: "Legendary Grandmaster", minRating: 3000 },
@@ -22,7 +22,7 @@ export async function alertNewLevel(discordId: string, curr_rating: number, max_
     const currlevel = levels.find(level => curr_rating >= level.minRating);
 
     if (maxlevel.minRating < currlevel.minRating) {
-        const msg = `🎉 Congratulations <@${discordId}> ! You've reached a new level: ${currlevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉`;
+        const msg = `🎉 Congratulations <@${discordId}> ! You've reached a new level: ${currlevel.name} with a rating of ${curr_rating}! Keep up the great work! 🎉\n\nCF Handle: [${handle}](<https://codeforces.com/profile/${handle}>)`;
 
         if (ch.isTextBased() && ch.isSendable())
             ch.send(msg);
