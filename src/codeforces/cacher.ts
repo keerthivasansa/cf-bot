@@ -52,6 +52,7 @@ export class CFCacher {
             }
         } catch (err) {
             console.log('error handled')
+            console.log(err)
             if (err instanceof CFApiUnavailable)
                 console.log("Skipping cache job - CF API down");
             else
@@ -125,36 +126,28 @@ export class CFCacher {
         const handles = users.map(usr => usr.handle);
         console.log("Caching user info");
         console.log({ handles });
-        const info = await this.cfApi.getUsersInfo(handles);
-        console.time("caching users");
-        await db.transaction().execute(tdb => {
-            let promises: Promise<any>[] = [];
-            info.forEach(usr => {
-                const handle = usr.handle?.toLowerCase();
-                if (!usr.rating || !usr.maxRating || !handle || !ratingMap.get(handle)) {
-                    console.log("missing info for", usr.handle)
-                    return;
-                }
-                const [oldRating,   oldMaxRating, discordId, ogHandle] = ratingMap.get(handle);
-                if (usr.rating === oldRating)
-                    return;
-                console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
 
-                if (oldRating < usr.rating)
-                    alertNewLevel(discordId,usr.handle, usr.rating, oldMaxRating);
+        try {
+            const info = await this.cfApi.getUsersInfo(handles);
+            console.time("caching users");
+            await db.transaction().execute(tdb => {
+                let promises: Promise<any>[] = [];
+                info.forEach(usr => {
+                    const handle = usr.handle?.toLowerCase();
+                    if (!usr.rating || !usr.maxRating || !handle || !ratingMap.get(handle)) {
+                        console.log("missing info for", usr.handle)
+                        return;
+                    }
+                    const [oldRating, oldMaxRating, discordId, ogHandle] = ratingMap.get(handle);
+                    if (usr.rating === oldRating)
+                        return;
+                    console.log({ ogHandle, rating: usr.rating, mxRating: usr.maxRating });
 
-                UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
+                    if (oldRating < usr.rating)
+                        alertNewLevel(discordId, usr.handle, usr.rating, oldMaxRating);
 
-                promises.push(
-                    tdb.updateTable('users')
-                        .set({
-                            rating: usr.rating,
-                            max_rating: usr.maxRating
-                        })
-                        .where('handle', '=', ogHandle)
-                        .execute()
-                )
-                if (usr.rating && usr.maxRating)
+                    UserProcesser.processRatingChange(discordId, oldRating, usr.rating);
+
                     promises.push(
                         tdb.updateTable('users')
                             .set({
@@ -164,11 +157,32 @@ export class CFCacher {
                             .where('handle', '=', ogHandle)
                             .execute()
                     )
+                    if (usr.rating && usr.maxRating)
+                        promises.push(
+                            tdb.updateTable('users')
+                                .set({
+                                    rating: usr.rating,
+                                    max_rating: usr.maxRating
+                                })
+                                .where('handle', '=', ogHandle)
+                                .execute()
+                        )
 
+                });
+                return Promise.all(promises);
             });
-            return Promise.all(promises);
-        });
-        console.timeEnd("caching users");
-        console.log("Cached!");
+            console.timeEnd("caching users");
+            console.log("Cached!");
+        } catch (err) {
+            const comment: string = err.response.data.comment;
+            const HANDLE_NOT_FOUND_PREFIX = 'handles: User with handle';
+            if (comment.includes(HANDLE_NOT_FOUND_PREFIX)) {
+                const missingHandle = comment.slice(HANDLE_NOT_FOUND_PREFIX.length + 1).split(' ')[0];
+                await db.updateTable('users').set({ handle: null }).where('handle', '=', missingHandle).execute();
+                console.log('Removed missing handle: ', missingHandle);
+                this.cacheUsers();
+            } else
+                throw err;
+        }
     }
 }
