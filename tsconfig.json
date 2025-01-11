@@ -13,5 +13,9 @@
             "$src/*": ["src/*"],
             "$db/*": ["db/*"]
         }
-    }
+    },
+    "include": [
+        "src",
+        "src/types"
+    ]
 }
