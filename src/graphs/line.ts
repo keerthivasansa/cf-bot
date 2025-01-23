@@ -187,6 +187,18 @@ export class CFLineChart<KeyType> {
         return this;
     }
 
+    labelLastPoint() {
+        const lastKey = Array.from(this.data.keys())[this.data.size - 1];
+        const lastValue = this.data.get(lastKey);
+        const maxValue = Math.max(...this.data.values());
+        
+        if (lastValue !== maxValue) {
+            this.addLabel(lastKey);
+        }
+        
+        return this;
+    }
+
     build() {
         this.plugins['annotation'] = { annotations: this.annotations };
         this.config['options']['plugins'] = this.plugins;
@@ -217,4 +229,4 @@ export class CFLineChart<KeyType> {
         const url = this.canvas.toDataURL();
         return url;
     }
-}   
+}
