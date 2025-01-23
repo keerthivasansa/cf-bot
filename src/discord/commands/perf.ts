@@ -97,6 +97,7 @@ export const perfCmd: Command = {
         const chartUrl = new CFLineChart(perfRatingMap)
             .markPoints()
             .labelMaxPoint()
+            .labelLastPoint()
             .setRangeBackground('RATING')
             .build()
             .toPNG();
