@@ -18,6 +18,7 @@
     "@tictactrip/axios-redis": "^4.0.0",
     "axios": "^1.7.7",
     "axios-cache-interceptor": "^1.6.2",
+    "axios-logger": "^2.8.1",
     "chart.js": "^4.4.4",
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-annotation": "^3.0.1",

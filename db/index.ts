@@ -11,9 +11,7 @@ const dialect = new PostgresDialect({
 
 const db = new Kysely<DB>({
     dialect,
-    log: ['query', 'error']
+    log: ['error']
 });
-
-db.updateTable('users').set({ rating: 2000 }).where('handle', '=', 'sakeerthi23').execute();
 
 export { db };

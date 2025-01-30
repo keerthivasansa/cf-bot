@@ -2,6 +2,7 @@ import { QueuedTasker } from "$src/common/queue";
 import axios from "axios";
 import { setupCache } from 'axios-cache-interceptor';
 import { CFApiUnavailable } from "./error";
+import AxiosLogger from 'axios-logger';
 
 class CodeforcesApi {
     private readonly INTERVAL = 150; // 2_000;
@@ -15,6 +16,9 @@ class CodeforcesApi {
         this.client = axios.create({
             baseURL: this.baseUrl,
         });
+
+        this.client.interceptors.request.use(AxiosLogger.requestLogger);
+
         setupCache(this.client);
     }
 
@@ -102,18 +106,23 @@ class CodeforcesApi {
 
     async getRatedUsers() {
         await this.tasker.waitForRelease();
+        try {
+            const resp = await this.client.get('user.ratedList', {
+                params: {
+                    includeRetired: false,
+                    activeOnly: false,
+                },
+            });
 
-        const resp = await this.client.get('user.ratedList', {
-            params: {
-                includeRetired: false,
-                activeOnly: false,
-            }
-        });
-        const data = resp.data as CfResult<User[]>;
-        this.isCfDown(data);
-        if (data.status != 'OK')
+            const data = resp.data as CfResult<User[]>;
+            this.isCfDown(data);
+            if (data.status != 'OK')
+                return [];
+            return data.result;
+        } catch (err) {
+            console.log(err);
             return [];
-        return data.result;
+        }
     }
 
     async getContestStandings(contestId: number, handles: string) {

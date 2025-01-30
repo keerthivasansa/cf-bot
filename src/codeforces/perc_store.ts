@@ -20,6 +20,12 @@ class CFPercentileStore {
         this.maxRatingMap = new Map();
         this.currRatingMap = new Map();
 
+        for (let i = 0; i <= this.MAX_RATING; i++) {
+            this.currRatingMap.set(i, 0);
+            this.maxRatingMap.set(i, 0);
+        }
+
+
         setInterval(() => this.runCache(), this.INTERVAL);
     }
 
