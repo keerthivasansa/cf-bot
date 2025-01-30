@@ -120,7 +120,7 @@ class CodeforcesApi {
                 return [];
             return data.result;
         } catch (err) {
-            console.log(err);
+            // console.log(err);
             return [];
         }
     }

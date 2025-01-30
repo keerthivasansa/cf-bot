@@ -37,6 +37,8 @@ export const percentileCmd: Command = {
         const ratingPercMap = percApi.getMap(type);
         const usrRating = type === 'max' ? user.max_rating : user.rating;
 
+        console.log({ usrRating, perc: ratingPercMap.get(usrRating) });
+
         const chart = new CFLineChart(ratingPercMap)
             .addLabel(usrRating)
             .setRangeBackground('RATING_HORIZONTAL')

@@ -2,6 +2,7 @@
 import Redis from 'ioredis';
 import { CFApiFactory } from "./client";
 import { CFApiUnavailable } from './error';
+import { readFileSync } from 'fs';
 
 export type PercentileType = 'max' | 'current';
 
@@ -20,10 +21,19 @@ class CFPercentileStore {
         this.maxRatingMap = new Map();
         this.currRatingMap = new Map();
 
-        for (let i = 0; i <= this.MAX_RATING; i++) {
-            this.currRatingMap.set(i, 0);
-            this.maxRatingMap.set(i, 0);
+        const perc2024File = readFileSync("src/codeforces/data/perc_data.txt", "utf-8");
+        const lines = perc2024File.split("\n");
+        for (let i = 101; i < lines.length; i++) {
+            const parts = lines[i].trim().split("\t");
+            console.log(parts);
+            const rating = parseInt(parts[0]);
+            const percentile = parseInt(parts[1] || '0');
+            console.log({ rating, percentile });
+            this.currRatingMap.set(rating, percentile);
+            this.maxRatingMap.set(rating, percentile);
         }
+
+        console.log("Rating for 1504", this.currRatingMap.get(1504));
 
 
         setInterval(() => this.runCache(), this.INTERVAL);
@@ -45,6 +55,11 @@ class CFPercentileStore {
         console.time("store percentile");
         const cfApi = CFApiFactory.get();
         const users = await cfApi.getRatedUsers();
+        if (users.length < 1){
+            console.log("Skipping refresh of percentile - api not available");
+            return;
+        }
+
         const promises: Promise<any>[] = [];
 
         users.sort((a, b) => {
