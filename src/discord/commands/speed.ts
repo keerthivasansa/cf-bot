@@ -17,21 +17,32 @@ export const speedCmd: Command = {
             .setMinValue(5))
         .addUserOption(option => option
             .setName('user')
-            .setDescription('Mention the user you want to check the speed of')
-        ),
+            .setDescription('Mention the user you want to check the speed of'))
+        .addStringOption(option => option
+            .setName('handle')
+            .setDescription('Codeforces handle for non-registered users')),
 
     async execute(msg, interaction) {
+        const handle = msg.options.getString('handle');
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
-
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
-
-        if (!user)
-            return interaction.reply("User has not registered their codeforces handle!")
+        
+        let cfHandle: string;
+        
+        if (handle) {
+            // Use provided handle directly
+            cfHandle = handle;
+        } else {
+            // Look up handle in database for the mentioned user or message author
+            const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
+            if (!user)
+                return interaction.reply("User has not registered their codeforces handle!");
+            cfHandle = user.handle;
+        }
 
         const cfApi = CFApiFactory.get();
 
-        const allUserSubmissions = await cfApi.getUserSubmissions(user.handle, 10000);
+        const allUserSubmissions = await cfApi.getUserSubmissions(cfHandle, 10000);
         if (allUserSubmissions.length === 0) {
             return interaction.reply("Participate in some contests!");
         }
@@ -42,8 +53,6 @@ export const speedCmd: Command = {
 
             return b.contestId - a.contestId;
         })
-
-        // console.log(allUserSubmissions.length);
 
         const selectedData: Map<number, { totalTime: number, totalCount: number }> = new Map();
         let totalContests = msg.options.getInteger("count") === null ? INT_MAX : msg.options.getInteger("count");
@@ -97,13 +106,12 @@ export const speedCmd: Command = {
             .setName('canvas.png');
 
         const embed = new EmbedBuilder()
-            .setTitle(`${user.handle} - Speed`)
+            .setTitle(`${cfHandle} - Speed`)
             .setImage('attachment://canvas.png');
 
         return interaction.reply({
             embeds: [embed],
             files: [attachment]
         });
-
     },
 };
