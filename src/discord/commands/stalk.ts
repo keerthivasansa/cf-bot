@@ -22,20 +22,33 @@ export const stalkCmd: Command = {
         .addUserOption(option => option
             .setName('user')
             .setDescription('Mention the user to stalk them instead')
+        )
+        .addStringOption(option => option
+            .setName('handle')
+            .setDescription('Codeforces handle for non-registered users')
         ),
 
     async execute(msg, interaction) {
-        // Get user ID if mentioned
         const mention = msg.options.getUser('user');
+        const handle = msg.options.getString('handle');
         const selectedUser = mention ? mention : msg.user;
-
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
-        if (!user)
-            return interaction.reply("User has not registered their Codeforces handle!");
+        
+        let cfHandle: string;
+        
+        if (handle) {
+            // Use provided handle directly
+            cfHandle = handle;
+        } else {
+            // Look up handle in database for the mentioned user or message author
+            const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
+            if (!user)
+                return interaction.reply("User has not registered their Codeforces handle!");
+            cfHandle = user.handle;
+        }
 
         // Fetch user submissions
         const cfApi = CFApiFactory.get();
-        const allUserSubmissions = await cfApi.getUserSubmissions(user.handle, 10000);
+        const allUserSubmissions = await cfApi.getUserSubmissions(cfHandle, 10000);
 
         if (allUserSubmissions.length === 0)
             return interaction.reply("Participate in some contests!");
@@ -134,7 +147,7 @@ export const stalkCmd: Command = {
         const row = getNavButtons(currentPage, totalPages);
 
         await interaction.reply({
-            content: `\`\`\`ansi\nUser ${user.handle} Submissions\n\n${tableMsg}\`\`\``,
+            content: `\`\`\`ansi\nUser ${cfHandle} Submissions\n\n${tableMsg}\`\`\``,
             components: [row],
         });
 
@@ -151,14 +164,14 @@ export const stalkCmd: Command = {
             const updatedRow = getNavButtons(currentPage, totalPages);
 
             await collectInteraction.update({
-                content: `\`\`\`ansi\nUser ${user.handle} Submissions\n\n${updatedTableMsg}\`\`\``,
+                content: `\`\`\`ansi\nUser ${cfHandle} Submissions\n\n${updatedTableMsg}\`\`\``,
                 components: [updatedRow],
             });
         });
 
         collector.on('end', async () => {
             await interaction.reply({
-                content: `\`\`\`ansi\nUser ${user.handle} Submissions\n\n${createSubmissionTable(currentPage)}\`\`\``,
+                content: `\`\`\`ansi\nUser ${cfHandle} Submissions\n\n${createSubmissionTable(currentPage)}\`\`\``,
                 components: [],
             });
         });
