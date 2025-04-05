@@ -17,22 +17,33 @@ export const perfCmd: Command = {
             .setDescription("Show entire performance history"))
         .addUserOption(option => option
             .setName('user')
-            .setDescription('Mention a user to get their speed')
-        ),
+            .setDescription('Mention a user to get their speed'))
+        .addStringOption(option => option
+            .setName('handle')
+            .setDescription('Codeforces handle for non-registered users')),
 
     async execute(msg, interaction) {
+        const handle = msg.options.getString('handle');
         const mention = msg.options.getUser('user');
         const selectedUser = mention ? mention : msg.user;
-
-        const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
         const showEntire = msg.options.getBoolean('full');
-
-        if (!user)
-            return interaction.reply("User has not registered their codeforces handle!")
+        
+        let cfHandle: string;
+        
+        if (handle) {
+            // Use provided handle directly
+            cfHandle = handle;
+        } else {
+            // Look up handle in database for the mentioned user or message author
+            const user = await db.selectFrom('users').selectAll().where('discordId', '=', selectedUser.id).executeTakeFirst();
+            if (!user)
+                return interaction.reply("User has not registered their codeforces handle!");
+            cfHandle = user.handle;
+        }
 
         const cfApi = CFApiFactory.get();
 
-        const allRatings = await cfApi.getUserRatings(user.handle);
+        const allRatings = await cfApi.getUserRatings(cfHandle);
 
         if (allRatings.length === 0)
             return msg.reply("You have not participated in any contests yet!");
@@ -107,7 +118,7 @@ export const perfCmd: Command = {
             .setName('canvas.png');
 
         const embed = new EmbedBuilder()
-            .setTitle(`${user.handle} - Performance`)
+            .setTitle(`${cfHandle} - Performance`)
             .setColor(getRatingColor(currRating))
             .setImage('attachment://canvas.png');
 

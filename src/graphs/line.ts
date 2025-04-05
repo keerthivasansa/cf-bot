@@ -160,6 +160,7 @@ export class CFLineChart<KeyType> {
 
     addLabel(x: KeyType) {
         const val = this.data.get(x);
+        if (!val) return this;
         console.log("adding label for index", x, val);
         const point = {
             x,
