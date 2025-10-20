@@ -5,6 +5,7 @@ import { percentileCmd } from "./commands/percentile";
 import { perfCmd } from "./commands/perf";
 import { probRatCmd } from "./commands/probrat";
 import { ratingCmd } from "./commands/rating";
+import { ratingChangeCmd } from "./commands/ratingchange";
 import { verifyCmd } from "./commands/verify";
 import { ranklistCmd } from "./commands/ranklist";
 import { speedCmd } from "./commands/speed";
@@ -16,10 +17,11 @@ export const registeredCommands = [
     probRatCmd,
     dailyCmd,
     ratingCmd,
+    ratingChangeCmd,
     perfCmd,
     percentileCmd,
     leaderboardCmd,
     ranklistCmd,
     speedCmd,
-    stalkCmd,
-]
+    stalkCmd
+];
